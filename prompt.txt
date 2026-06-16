@@ -1,0 +1,40 @@
+用 Python 开发一个代码问答 HTTP 服务，基于 Claude Agent SDK。
+
+## 技术栈版本要求
+- Python >= 3.10
+- claude-agent-sdk >= 0.1.0
+  注意：旧包名 claude-code-sdk 已废弃，类名 ClaudeCodeOptions 已改为 ClaudeAgentOptions
+- fastapi >= 0.110.0
+- uvicorn[standard] >= 0.29.0
+- 使用 uv 管理 Python 环境，输出 pyproject.toml，README 中提供基于 uv 的完整初始化和启动命令
+
+## 需求
+
+1. 启动时从环境变量读取以下配置：
+   - ANTHROPIC_BASE_URL：模型网关地址（支持任意 Anthropic 协议兼容网关）
+   - ANTHROPIC_API_KEY：API Key
+   - PROJECT_DIR：Agent 工作目录（项目代码所在路径）
+   - MODEL：模型名称
+
+2. 提供以下 HTTP 接口：
+   - POST /ask：接收 JSON {"question": "...", "max_turns": 10}
+     返回 {"answer": "...", "cost_usd": 0.001, "num_turns": 3}
+   - POST /ask/stream：相同入参，以 SSE 格式流式返回回答内容
+   - GET /health：返回当前配置信息
+
+3. Agent 配置要求：
+   - 使用 ClaudeAgentOptions（不是 ClaudeCodeOptions）
+   - cwd 设置为 PROJECT_DIR
+   - permission_mode 为 "plan"（只读模式，不修改文件）
+   - allowed_tools 包含：Read、Glob、Grep、Bash
+   - system_prompt 告知 Agent 专注代码分析，回答时引用具体文件路径和行号
+
+4. 消息处理：
+   - 正确处理三种消息类型：AssistantMessage、TextBlock、ResultMessage
+   - 从 ResultMessage 中提取 total_cost_usd 和 num_turns
+
+5. 输出文件：
+   - server.py
+   - pyproject.toml
+   - .env.example（含所有环境变量说明）
+   - README.md（含 uv 初始化、启动命令、接口调用示例）
