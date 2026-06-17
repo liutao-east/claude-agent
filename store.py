@@ -50,6 +50,7 @@ class Conversation:
     updated_at: str
     total_cost_usd: float
     total_turns: int
+    scenario: str | None = None
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -69,10 +70,17 @@ def init_db() -> None:
                 created_at      TEXT NOT NULL,
                 updated_at      TEXT NOT NULL,
                 total_cost_usd  REAL NOT NULL DEFAULT 0,
-                total_turns     INTEGER NOT NULL DEFAULT 0
+                total_turns     INTEGER NOT NULL DEFAULT 0,
+                scenario        TEXT
             )
             """
         )
+        # 旧库迁移:CREATE TABLE IF NOT EXISTS 不会给已存在的表补列,
+        # 故对旧库单独 ALTER 添加 scenario 列;列已存在时忽略。
+        try:
+            conn.execute("ALTER TABLE conversations ADD COLUMN scenario TEXT")
+        except sqlite3.OperationalError:
+            pass
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS messages (
@@ -94,7 +102,9 @@ def init_db() -> None:
         conn.commit()
 
 
-def create_conversation(title: str | None = None) -> Conversation:
+def create_conversation(
+    title: str | None = None, scenario: str | None = None
+) -> Conversation:
     """新建一个会话,返回对应的 Conversation。"""
     conv = Conversation(
         id=str(uuid.uuid4()),
@@ -104,13 +114,15 @@ def create_conversation(title: str | None = None) -> Conversation:
         updated_at=_now(),
         total_cost_usd=0.0,
         total_turns=0,
+        scenario=scenario,
     )
     conn = _connect()
     with _lock:
         conn.execute(
             "INSERT INTO conversations "
             "(id, sdk_session_id, title, created_at, updated_at, "
-            " total_cost_usd, total_turns) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            " total_cost_usd, total_turns, scenario) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 conv.id,
                 conv.sdk_session_id,
@@ -119,6 +131,7 @@ def create_conversation(title: str | None = None) -> Conversation:
                 conv.updated_at,
                 conv.total_cost_usd,
                 conv.total_turns,
+                conv.scenario,
             ),
         )
         conn.commit()
@@ -131,7 +144,8 @@ def get_conversation(conv_id: str) -> Conversation | None:
     with _lock:
         row = conn.execute(
             "SELECT id, sdk_session_id, title, created_at, updated_at, "
-            "       total_cost_usd, total_turns FROM conversations WHERE id = ?",
+            "       total_cost_usd, total_turns, scenario "
+            "FROM conversations WHERE id = ?",
             (conv_id,),
         ).fetchone()
     if row is None:
@@ -144,6 +158,7 @@ def get_conversation(conv_id: str) -> Conversation | None:
         updated_at=row["updated_at"],
         total_cost_usd=row["total_cost_usd"],
         total_turns=row["total_turns"],
+        scenario=row["scenario"],
     )
 
 
@@ -198,7 +213,7 @@ def list_conversations(limit: int = 50) -> list[dict]:
     with _lock:
         rows = conn.execute(
             "SELECT id, title, created_at, updated_at, "
-            "       total_cost_usd, total_turns, sdk_session_id "
+            "       total_cost_usd, total_turns, sdk_session_id, scenario "
             "FROM conversations ORDER BY updated_at DESC LIMIT ?",
             (limit,),
         ).fetchall()

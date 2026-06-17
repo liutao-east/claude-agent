@@ -13,6 +13,32 @@
   "log_level": "INFO",
   "db_path": "codeqa.db",
 
+  "//default_scenario": "默认场景名;缺省时取 scenarios 列表首个,再缺省回退 code-qa",
+  "default_scenario": "code-qa",
+
+  "//scenarios": "可选的多场景配置。省略整个 scenarios 时会自动合成一个默认 code-qa 场景(用全局 project_dir/model + 内置代码问答提示词),旧配置无需改动。场景内 cwd/model/allowed_tools 省略则继承全局默认。",
+  "scenarios": [
+    {
+      "name": "code-qa",
+      "description": "代码问答:阅读理解项目代码并回答",
+      "//prompt": "system_prompt_file 路径相对 server.py 目录解析;也可改用 system_prompt 内联字符串",
+      "system_prompt_file": "scenarios/code_qa.md"
+    },
+    {
+      "name": "troubleshoot",
+      "description": "项目问题排查:基于日志+代码定位线上问题",
+      "system_prompt_file": "scenarios/troubleshoot.md",
+      "//cwd": "代码目录;省略则用全局 project_dir",
+      "cwd": "D:/path/to/your/project",
+      "//add_dirs": "cwd 之外允许访问的目录(日志目录 LOG_DIR),绝对路径",
+      "add_dirs": ["/data/logs/neo-star"],
+      "allowed_tools": ["Read", "Glob", "Grep", "Bash"],
+      "//vars": "提示词里 ${LOG_DIR}/${DATABASE} 等占位符的替换值",
+      "vars": { "LOG_DIR": "/data/logs/neo-star", "DATABASE": "neo_star" },
+      "//mcp_servers": "预留:接入 MySQL 查询时在此加 mcp_servers(如 {\"mysql\": {...}})并把 mcp__mysql__* 加进 allowed_tools"
+    }
+  ],
+
   "//env": "env 块整体透传给 Agent 子进程(与 settings.json 的 env 同格式,方便互相复制)。不需要的项可直接删除。",
   "env": {
     "ANTHROPIC_BASE_URL": "https://your-gateway.example.com",
