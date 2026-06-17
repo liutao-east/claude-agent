@@ -1,6 +1,7 @@
 """代码问答 HTTP 服务,基于 Claude Agent SDK。
 
-启动时从环境变量读取配置,对外提供以下接口:
+启动时从 config.json 读取配置(结构与 Claude Code 的 settings.json 一致,
+其中 env 块原样透传给 Agent 子进程,可配置网关/密钥/代理),对外提供以下接口:
     POST /ask          同步返回代码问答结果 {answer, cost_usd, num_turns, conversation_id}
     POST /ask_stream   以 SSE 流式返回回答内容
     GET  /health       返回当前配置信息
@@ -19,6 +20,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Any, AsyncIterator
 
 from fastapi import FastAPI
@@ -34,24 +36,61 @@ from claude_agent_sdk import (
     query,
 )
 
-import store
+# ---------------------------------------------------------------------------
+# 配置加载(JSON 文件,结构与 Claude Code 的 settings.json 一致)
+#
+# 默认读取项目根目录下的 config.json,可用环境变量 CODEQA_CONFIG 指定其它路径。
+# 其中 env 块会原样透传给 Agent 子进程,因此把 HTTP_PROXY / HTTPS_PROXY、
+# API_TIMEOUT_MS 等写进 env,即可让 Agent 的出站请求走代理。示例见 config.json.example。
+# ---------------------------------------------------------------------------
+CONFIG_PATH = Path(os.environ.get("CODEQA_CONFIG", "config.json"))
+if not CONFIG_PATH.is_absolute():
+    # 相对路径按 server.py 所在目录解析,不受启动 cwd 影响。
+    CONFIG_PATH = Path(__file__).resolve().parent / CONFIG_PATH
+
+
+def load_config() -> dict[str, Any]:
+    """读取 JSON 配置;文件缺失或解析失败时返回空配置并告警。"""
+    log = logging.getLogger("code-qa")
+    try:
+        with CONFIG_PATH.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        log.warning("配置文件不存在: %s(请复制 config.json.example 为 config.json)", CONFIG_PATH)
+        return {}
+    except json.JSONDecodeError as e:
+        log.error("配置文件解析失败 %s: %s", CONFIG_PATH, e)
+        return {}
+
+
+CONFIG: dict[str, Any] = load_config()
+
+# store 在导入时即把 DB_PATH 求值为模块常量,故库路径需在导入它之前写入环境变量。
+if CONFIG.get("db_path"):
+    os.environ["DB_PATH"] = str(CONFIG["db_path"])
+
+import store  # noqa: E402  必须在依据配置设置 DB_PATH 之后导入
 
 # ---------------------------------------------------------------------------
 # 日志
 # ---------------------------------------------------------------------------
 logging.basicConfig(
-    level=os.environ.get("LOG_LEVEL", "INFO"),
+    level=CONFIG.get("log_level") or os.environ.get("LOG_LEVEL", "INFO"),
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 logger = logging.getLogger("code-qa")
 
 # ---------------------------------------------------------------------------
-# 启动配置(从环境变量读取)
+# 启动配置(取自 config.json)
 # ---------------------------------------------------------------------------
-ANTHROPIC_BASE_URL: str | None = os.environ.get("ANTHROPIC_BASE_URL")
-ANTHROPIC_API_KEY: str | None = os.environ.get("ANTHROPIC_API_KEY")
-PROJECT_DIR: str | None = os.environ.get("PROJECT_DIR")
-MODEL: str | None = os.environ.get("MODEL")
+# env 块整体透传给 Agent 子进程:ANTHROPIC_* 决定网关与密钥,HTTP(S)_PROXY 让出站走代理。
+AGENT_ENV: dict[str, str] = {
+    str(k): str(v) for k, v in (CONFIG.get("env") or {}).items()
+}
+ANTHROPIC_BASE_URL: str | None = AGENT_ENV.get("ANTHROPIC_BASE_URL")
+ANTHROPIC_API_KEY: str | None = AGENT_ENV.get("ANTHROPIC_API_KEY")
+PROJECT_DIR: str | None = CONFIG.get("project_dir")
+MODEL: str | None = CONFIG.get("model")
 
 DEFAULT_MAX_TURNS = 10
 ALLOWED_TOOLS = ["Read", "Glob", "Grep", "Bash"]
@@ -70,8 +109,8 @@ SYSTEM_PROMPT = (
     "4. 回答准确、简洁,先给结论再给必要的依据。"
 )
 
-logger.info("配置加载: model=%s base_url=%s project_dir=%s db_path=%s",
-            MODEL, ANTHROPIC_BASE_URL, PROJECT_DIR, store.DB_PATH)
+logger.info("配置加载: config=%s model=%s base_url=%s project_dir=%s db_path=%s",
+            CONFIG_PATH, MODEL, ANTHROPIC_BASE_URL, PROJECT_DIR, store.DB_PATH)
 if not ANTHROPIC_API_KEY:
     logger.warning("ANTHROPIC_API_KEY 未设置,Agent 调用将会失败")
 if not PROJECT_DIR:
@@ -100,12 +139,8 @@ def build_options(max_turns: int, resume: str | None = None) -> ClaudeAgentOptio
     if not MODEL:
         raise ValueError("环境变量 MODEL 未设置")
 
-    # 显式把网关地址与密钥传入子进程,确保 Agent 走指定网关。
-    env: dict[str, str] = {}
-    if ANTHROPIC_API_KEY:
-        env["ANTHROPIC_API_KEY"] = ANTHROPIC_API_KEY
-    if ANTHROPIC_BASE_URL:
-        env["ANTHROPIC_BASE_URL"] = ANTHROPIC_BASE_URL
+    # env 块整体透传给子进程:ANTHROPIC_* 指定网关/密钥,HTTP(S)_PROXY 让出站走代理。
+    env: dict[str, str] = dict(AGENT_ENV)
 
     kwargs: dict[str, Any] = dict(
         cwd=PROJECT_DIR,
@@ -367,8 +402,8 @@ def main() -> None:
     """启动 uvicorn 服务(供 `python server.py` 与 `code-qa` 入口使用)。"""
     import uvicorn
 
-    host = os.environ.get("HOST", "0.0.0.0")
-    port = int(os.environ.get("PORT", "8000"))
+    host = str(CONFIG.get("host") or os.environ.get("HOST", "0.0.0.0"))
+    port = int(CONFIG.get("port") or os.environ.get("PORT", "8000"))
     uvicorn.run("server:app", host=host, port=port, reload=False)
 
 

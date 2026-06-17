@@ -27,5 +27,6 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-# 项目源码:server.py(服务)与 store.py(SQLite 持久化层)作为顶层模块打包
+# 项目源码:server.py(服务)与 store.py(SQLite 持久化层)作为顶层模块打包。
+# config.json 为运行时外部配置,不打包进 wheel(由部署环境提供)。
 only-include = ["server.py", "store.py"]

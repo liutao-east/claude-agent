@@ -61,43 +61,54 @@ uv sync
 
 > `uv sync` 会读取本项目的 `pyproject.toml`,自动安装 `claude-agent-sdk`、`fastapi`、`uvicorn` 等依赖。
 
-## 三、配置环境变量
+## 三、配置(config.json)
 
-复制示例文件并填入真实值:
+配置采用 **JSON** 文件,结构与 Claude Code 的 `settings.json` 一致——尤其 `env`
+块格式完全相同,**可与 `~/.claude/settings.json` 互相复制**。复制示例并填入真实值:
 
 ```bash
-cp .env.example .env
+cp config.json.example config.json
 ```
 
-编辑 `.env`:
+编辑 `config.json`:
 
-```dotenv
-ANTHROPIC_BASE_URL=https://your-gateway.example.com   # 任意 Anthropic 协议兼容网关
-ANTHROPIC_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-PROJECT_DIR=/path/to/your/project                     # 被分析的项目代码路径
-MODEL=claude-sonnet-4-6                               # 模型名称
+```jsonc
+{
+  "model": "claude-sonnet-4-6",          // 模型名称(需为网关支持的 ID)
+  "project_dir": "/path/to/your/project", // 被分析的项目代码路径(绝对路径)
+  "host": "0.0.0.0",                      // 可选,默认 0.0.0.0
+  "port": 8000,                           // 可选,默认 8000
+  "log_level": "INFO",                    // 可选,默认 INFO
+
+  // env 块整体透传给 Agent 子进程;不需要的项可删除
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://your-gateway.example.com", // 任意 Anthropic 兼容网关
+    "ANTHROPIC_API_KEY": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "HTTP_PROXY": "http://127.0.0.1:7897",   // 让 Agent 出站请求走代理
+    "HTTPS_PROXY": "http://127.0.0.1:7897",
+    "API_TIMEOUT_MS": "3000000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  }
+}
 ```
 
-> Claude Agent SDK 会以子进程方式驱动 Claude Code,`ANTHROPIC_BASE_URL` / `ANTHROPIC_API_KEY`
-> 会被显式传入子进程,使 Agent 走你指定的网关。
+> - **代理**:把 `HTTP_PROXY` / `HTTPS_PROXY` 写进 `env` 即可——该块会原样传入
+>   驱动 Claude Code 的子进程,Agent 的出站请求(访问网关/模型)随之走代理。
+> - **网关/密钥**:`ANTHROPIC_BASE_URL` / `ANTHROPIC_API_KEY` 同样放在 `env` 里。
+> - `config.json` 含密钥,已在 `.gitignore` 中忽略,勿提交。
+> - 默认读取项目根目录下的 `config.json`;可用环境变量 `CODEQA_CONFIG` 指定其它路径。
 
 ## 四、启动服务
 
 ```bash
-# 自动加载 .env 并启动(推荐)
-uv run --env-file .env python server.py
+# 读取 config.json 并启动(推荐)
+uv run python server.py
 ```
 
-或手动 export 后启动:
+也可以用 uvicorn 直接拉起 ASGI 应用(host/port 仍取自 config.json,命令行参数可覆盖):
 
 ```bash
-export $(grep -v '^#' .env | xargs) && uv run python server.py
-```
-
-也可以用 uvicorn 直接拉起 ASGI 应用:
-
-```bash
-uv run --env-file .env uvicorn server:app --host 0.0.0.0 --port 8000
+uv run uvicorn server:app --host 0.0.0.0 --port 8000
 ```
 
 启动后默认监听 `http://0.0.0.0:8000`,可访问 `GET /health` 查看配置。
@@ -205,7 +216,7 @@ data: {"answer": "项目入口位于 `src/main.py:12`……", "cost_usd": 0.001,
 .
 ├── server.py         # FastAPI 服务:接口路由 + Agent 调用逻辑(含追问编排)
 ├── store.py          # SQLite 持久化层:会话与消息 CRUD
-├── pyproject.toml    # uv 项目与依赖声明
-├── .env.example      # 环境变量示例
+├── pyproject.toml      # uv 项目与依赖声明
+├── config.json.example # 配置示例(复制为 config.json)
 └── README.md
 ```

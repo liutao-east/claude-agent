@@ -5,7 +5,8 @@ __pycache__/
 .venv/
 venv/
 
-# 环境变量(含密钥,勿提交)
+# 配置文件(含密钥,勿提交;示例见 config.json.example)
+config.json
 .env
 
 # IDE
