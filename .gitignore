@@ -15,3 +15,8 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# SQLite 数据库(运行时生成,勿提交)
+*.db
+*.db-shm
+*.db-wal
