@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>软萌AI代码小助手✨</title>
+<style>
+:root {
+  /* 可爱马卡龙色系 */
+  --pink: #FF9BB3;
+  --pink-light: #FFE6EC;
+  --blue: #86C1FF;
+  --blue-light: #E6F2FF;
+  --mint: #86E3CE;
+  --mint-light: #E6FBF6;
+  --yellow: #FFE599;
+  --lavender: #D4C2FC;
+  --text-dark: #333344;
+  --text-gray: #777788;
+  --text-light: #aaaabb;
+  --white: #ffffff;
+  --soft-gray: #F7F8FC;
+  --border-soft: #E8EBF5;
+  /* 圆润圆角 可爱风 */
+  --r-xl: 22px;
+  --r-lg: 16px;
+  --r-md: 12px;
+  --r-sm: 8px;
+  --r-round: 999px;
+  /* 柔和阴影 */
+  --shadow-soft: 0 3px 10px rgba(134, 193, 255, 0.15);
+  --shadow-hover: 0 6px 18px rgba(134, 193, 255, 0.25);
+  --shadow-pink: 0 4px 14px rgba(255, 155, 179, 0.2);
+  /* 动画曲线 软萌回弹 */
+  --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --trans: 220ms var(--bounce);
+  /* 布局尺寸 */
+  --sidebar-w: 270px;
+  --top-h: 56px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: linear-gradient(145deg, #fef7fb, #f0f7ff);
+  color: var(--text-dark);
+}
+/* 全局滚动条可爱化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--lavender);
+  border-radius: var(--r-round);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pink);
+}
+
+/* 整体布局 */
+.wrap {
+  display: flex;
+  height: 100vh;
+}
+
+/* 侧边栏 */
+.sidebar {
+  width: var(--sidebar-w);
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid var(--border-soft);
+  padding: 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.logo-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-lg);
+  background: var(--blue-light);
+}
+.logo-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, var(--blue), var(--lavender));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+}
+.logo-text {
+  font-weight: 700;
+  font-size: 15px;
+}
+.new-chat-btn {
+  width: 100%;
+  border: none;
+  padding: 11px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(135deg, var(--pink), #ff88aa);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: var(--trans);
+  box-shadow: var(--shadow-pink);
+}
+.new-chat-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(255, 155, 179, 0.35);
+}
+.sep-line {
+  height: 1px;
+  background: var(--border-soft);
+  margin: 0 6px;
+}
+.history-title {
+  font-size: 11px;
+  color: var(--text-light);
+  padding: 0 8px;
+  letter-spacing: 1px;
+}
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hist-item {
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  position: relative;
+  transition: var(--trans);
+}
+.hist-item:hover {
+  background: var(--soft-gray);
+}
+.hist-item.active {
+  background: var(--blue-light);
+}
+.hist-title {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 22px;
+}
+.hist-del {
+  position: absolute;
+  right: 8px;
+  top: 10px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-light);
+  opacity: 0;
+  cursor: pointer;
+  transition: var(--trans);
+}
+.hist-item:hover .hist-del {
+  opacity: 1;
+}
+.hist-del:hover {
+  background: var(--pink-light);
+  color: var(--pink);
+}
+
+/* 主聊天区域 */
+.main-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.top-bar {
+  height: var(--top-h);
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-soft);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 10px;
+}
+.top-tag {
+  padding: 4px 12px;
+  border-radius: var(--r-round);
+  background: var(--mint-light);
+  color: #029272;
+  font-size: 12px;
+  font-weight: 600;
+}
+.chat-feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 26px 24px;
+  position: relative;
+  scroll-behavior: smooth;
+}
+/* 欢迎卡片 */
+.welcome-card {
+  width: 100%;
+  max-width: 640px;
+  margin: 40px auto;
+  text-align: center;
+}
+.welcome-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-xl);
+  background: linear-gradient(135deg, var(--blue), var(--mint));
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  color: white;
+  box-shadow: var(--shadow-hover);
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.welcome-card h2 {
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+.welcome-card p {
+  color: var(--text-gray);
+  font-size: 14px;
+}
+.scene-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+.scene-card {
+  background: rgba(255,255,255,0.8);
+  padding: 18px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-soft);
+  cursor: pointer;
+  transition: var(--trans);
+  box-shadow: var(--shadow-soft);
+}
+.scene-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--blue);
+}
+.scene-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--blue-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+.scene-name {
+  font-weight: 600;
+  font-size: 15px;
+}
+.scene-desc {
+  font-size: 12px;
+  color: var(--text-gray);
+  margin-top: 4px;
+}
+
+/* 消息气泡 */
+.msg {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 22px;
+  animation: popIn 0.3s var(--bounce);
+  max-width: 900px;
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.msg.user {
+  flex-direction: row-reverse;
+  margin-left: auto;
+}
+.msg-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-round);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.msg.bot .msg-avatar {
+  background: linear-gradient(135deg, var(--mint), #4cd1b3);
+  color: white;
+}
+.msg.user .msg-avatar {
+  background: linear-gradient(135deg, var(--pink), #ff7799);
+  color: white;
+}
+.bubble {
+  padding: 13px 16px;
+  border-radius: var(--r-xl);
+  position: relative;
+  transition: var(--trans);
+  line-height: 1.7;
+}
+.msg.bot .bubble {
+  background: rgba(255,255,255,0.85);
+  border: 1px solid var(--border-soft);
+  border-bottom-left-radius: 6px;
+  max-width: 82%;
+  box-shadow: var(--shadow-soft);
+}
+.msg.user .bubble {
+  background: linear-gradient(135deg, var(--pink), #ff82a0);
+  color: white;
+  border-bottom-right-radius: 6px;
+  max-width: 72%;
+  box-shadow: var(--shadow-pink);
+}
+.msg-copy {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-sm);
+  border: none;
+  background: rgba(0,0,0,0.06);
+  opacity: 0;
+  cursor: pointer;
+  transition: var(--trans);
+  font-size: 14px;
+}
+.msg.bot .bubble:hover .msg-copy {
+  opacity: 1;
+}
+/* 可爱加载动画 */
+.thinking-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+}
+.dot-group {
+  display: flex;
+  gap: 6px;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--blue);
+  animation: cuteBlink 1.2s infinite ease-in-out;
+  box-shadow: 0 0 6px rgba(134, 193, 255, 0.4);
+}
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes cuteBlink {
+  0%,100% { opacity: 0.3; transform: scale(0.7); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* 输入框区域 */
+.input-area {
+  padding: 14px 24px 20px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border-soft);
+}
+.input-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.input-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px 16px;
+  background: white;
+  border-radius: var(--r-xl);
+  border: 1.5px solid var(--border-soft);
+  transition: var(--trans);
+}
+.input-wrap:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(134, 193, 255, 0.2);
+}
+#userInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  max-height: 160px;
+  font-size: 14px;
+  line-height: 1.6;
+  background: transparent;
+}
+#userInput::placeholder {
+  color: var(--text-light);
+}
+.send-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-round);
+  border: none;
+  background: linear-gradient(135deg, var(--blue), var(--lavender));
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: var(--trans);
+}
+.send-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(134, 193, 255, 0.3);
+}
+.send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+.tip-text {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-light);
+  margin-top: 8px;
+}
+
+/* 回到底部悬浮按钮 */
+.scroll-bottom-btn {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  color: var(--blue);
+  font-size: 18px;
+  box-shadow: var(--shadow-hover);
+  cursor: pointer;
+  display: none;
+  transition: var(--trans);
+}
+.scroll-bottom-btn.show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scroll-bottom-btn:hover {
+  background: var(--blue-light);
+  transform: translateY(-3px);
+}
+
+/* 云朵Toast弹窗 */
+.toast-box {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  padding: 10px 22px;
+  border-radius: var(--r-round);
+  color: white;
+  font-size: 13px;
+  opacity: 0;
+  transition: var(--trans);
+  z-index: 9999;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+.toast-box.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.toast-success { background: linear-gradient(135deg, var(--mint), #3fc8aa); }
+.toast-error { background: linear-gradient(135deg, #ff788c, #ff4d6d); }
+.toast-info { background: linear-gradient(135deg, #7799ff, #8672e8); }
+
+/* 代码块美化 */
+.bubble pre {
+  background: #f7f9ff;
+  border-radius: var(--r-md);
+  padding: 12px;
+  margin: 10px 0;
+  overflow-x: auto;
+  border: 1px solid #e0e8ff;
+}
+.msg.user .bubble pre {
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.25);
+}
+.bubble code {
+  background: var(--blue-light);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+.msg.user .bubble code {
+  background: rgba(255,255,255,0.2);
+}
+
+/* 移动端适配 */
+@media (max-width:768px) {
+  :root {
+    --sidebar-w: 230px;
+  }
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    z-index: 999;
+    height: 100vh;
+    transition: left 0.3s var(--bounce);
+  }
+  .sidebar.open { left: 0; }
+  .chat-feed { padding: 16px 12px; }
+  .input-area { padding: 12px 12px 16px; }
+  .msg .bubble { max-width: 88%; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 侧边栏 -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo-box">
+      <div class="logo-icon">✨</div>
+      <span class="logo-text">软萌AI代码小助手</span>
+    </div>
+    <button class="new-chat-btn" onclick="createNewChat()">
+      <span>+</span> 新建可爱对话
+    </button>
+    <div class="sep-line"></div>
+    <div class="history-title">历史对话</div>
+    <div class="history-list" id="historyList">
+      <div class="hist-item">
+        <div class="hist-title">前端页面美化技巧</div>
+        <button class="hist-del" onclick="delHistory(event)">×</button>
+      </div>
+      <div class="hist-item active">
+        <div class="hist-title">JS动画实现方案</div>
+        <button class="hist-del" onclick="delHistory(event)">×</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 主聊天 -->
+  <section class="main-box">
+    <div class="top-bar">
+      <span class="top-tag">代码问答场景</span>
+    </div>
+    <div class="chat-feed" id="feed">
+      <!-- 欢迎页 -->
+      <div class="welcome-card">
+        <div class="welcome-avatar">🤖</div>
+        <h2>哈喽～我是你的软萌AI助手✨</h2>
+        <p>选择场景，我帮你写代码、排bug、读文档，超温柔！</p>
+        <div class="scene-grid">
+          <div class="scene-card">
+            <div class="scene-icon">💻</div>
+            <div class="scene-name">代码编写</div>
+            <div class="scene-desc">生成前端/后端代码，注释清晰</div>
+          </div>
+          <div class="scene-card">
+            <div class="scene-icon">🔧</div>
+            <div class="scene-name">Bug排查</div>
+            <div class="scene-desc">报错解析、修复逻辑、优化性能</div>
+          </div>
+          <div class="scene-card">
+            <div class="scene-icon">📄</div>
+            <div class="scene-name">日志分析</div>
+            <div class="scene-desc">解读报错日志，定位异常根源</div>
+          </div>
+          <div class="scene-card">
+            <div class="scene-icon">🗄️</div>
+            <div class="scene-name">SQL数据库</div>
+            <div class="scene-desc">写查询、优化索引、数据建模</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 输入框 -->
+    <div class="input-area">
+      <div class="input-inner">
+        <div class="input-wrap">
+          <textarea id="userInput" rows="1" placeholder="输入你的问题，我会温柔回答你～" oninput="autoExpand(this)" onkeydown="handleKey(event)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+        </div>
+        <div class="tip-text">Enter发送消息 · Shift+Enter换行 · 复制代码一键粘贴</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- 云朵提示框 -->
+<div class="toast-box" id="toast"></div>
+
+<script>
+const feed = document.getElementById('feed');
+const input = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+let toastTimer = null;
+let isBusy = false;
+
+// 自动增高输入框
+function autoExpand(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+// 键盘回车发送
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+// 云朵Toast提示
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.innerText = msg;
+  t.className = 'toast-box show toast-' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// 滚动到底部
+function scrollToBottom() {
+  feed.scrollTop = feed.scrollHeight;
+}
+
+// 新建对话
+function createNewChat() {
+  feed.innerHTML = `
+    <div class="welcome-card">
+      <div class="welcome-avatar">🤖</div>
+      <h2>哈喽～我是你的软萌AI助手✨</h2>
+      <p>选择场景，我帮你写代码、排bug、读文档，超温柔！</p>
+      <div class="scene-grid">
+        <div class="scene-card">
+          <div class="scene-icon">💻</div>
+          <div class="scene-name">代码编写</div>
+          <div class="scene-desc">生成前端/后端代码，注释清晰</div>
+        </div>
+        <div class="scene-card">
+          <div class="scene-icon">🔧</div>
+          <div class="scene-name">Bug排查</div>
+          <div class="scene-desc">报错解析、修复逻辑、优化性能</div>
+        </div>
+        <div class="scene-card">
+          <div class="scene-icon">📄</div>
+          <div class="scene-name">日志分析</div>
+          <div class="scene-desc">解读报错日志，定位异常根源</div>
+        </div>
+        <div class="scene-card">
+          <div class="scene-icon">🗄️</div>
+          <div class="scene-name">SQL数据库</div>
+          <div class="scene-desc">写查询、优化索引、数据建模</div>
+        </div>
+      </div>
+    </div>
+  `;
+  showToast('已开启全新对话🥰', 'success');
+}
+
+// 删除历史会话
+function delHistory(e) {
+  e.stopPropagation();
+  e.target.closest('.hist-item').remove();
+  showToast('已删除这条对话记录', 'info');
+}
+
+// 添加消息气泡
+function addMsg(role, htmlText) {
+  const wrap = document.createElement('div');
+  wrap.className = `msg ${role}`;
+  const avatar = role === 'user' ? '你' : '🤖';
+  wrap.innerHTML = `
+    <div class="msg-avatar">${avatar}</div>
+    <div class="bubble">
+      ${htmlText}
+      ${role === 'bot' ? `<button class="msg-copy" onclick="copyText(this)">📋</button>` : ''}
+    </div>
+  `;
+  feed.appendChild(wrap);
+  scrollToBottom();
+  return wrap;
+}
+
+// 复制消息文本
+function copyText(el) {
+  const text = el.parentElement.innerText.replace('📋', '').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('复制成功啦🥳', 'success');
+  })
+}
+
+// 发送消息
+function sendMessage() {
+  const text = input.value.trim();
+  if (!text || isBusy) return;
+  // 用户消息
+  addMsg('user', text);
+  input.value = '';
+  autoExpand(input);
+  isBusy = true;
+  sendBtn.disabled = true;
+  // 可爱加载动画
+  const thinking = addMsg('bot', `
+    <div class="thinking-box">
+      <div class="dot-group">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+      <span>正在认真思考中...</span>
+    </div>
+  `);
+  // 模拟AI回复
+  setTimeout(() => {
+    thinking.remove();
+    addMsg('bot', `我收到你的问题啦～\n### 可爱回复示例
+\`\`\`js
+// 软萌注释
+function cuteTip() {
+  console.log('有什么问题尽管问我！');
+}
+\`\`\`
+如果需要优化代码、排查bug，直接把代码贴给我就好啦✨`);
+    isBusy = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }, 1600);
+}
+
+// 滚动悬浮按钮初始化
+function initScrollBtn() {
+  const btn = document.createElement('button');
+  btn.className = 'scroll-bottom-btn';
+  btn.innerText = '↓';
+  btn.onclick = scrollToBottom;
+  feed.appendChild(btn);
+  feed.addEventListener('scroll', () => {
+    const bottomEdge = feed.scrollTop + feed.clientHeight >= feed.scrollHeight - 15;
+    btn.classList.toggle('show', !bottomEdge);
+  })
+}
+
+window.onload = () => {
+  initScrollBtn();
+  autoExpand(input);
+}
+</script>
+</body>
+</html>
