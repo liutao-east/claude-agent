@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>代码问答</title>
+<title>后端问答助手</title>
 
 <!-- Markdown + 代码高亮 -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -391,7 +391,7 @@
         <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
       </svg>
     </div>
-    <span class="logo-name">代码问答<span class="logo-dot">.</span></span>
+    <span class="logo-name">后端问答助手<span class="logo-dot">.</span></span>
   </div>
 
   <!-- 新对话 -->
@@ -504,6 +504,28 @@ async function init() {
   } catch (e) {
     toast("场景加载失败：" + e.message);
   }
+  restoreFromHash();
+}
+
+/* ═══════════════════════
+   路由：让刷新 / 直达保持当前视图
+   #s/<场景>  仅选了场景、尚未产生会话
+   #c/<会话id> 已有会话
+═══════════════════════ */
+function setRoute(hash) {
+  // replaceState 更新地址栏但不新增历史、不触发事件，避免重入
+  history.replaceState(null, "", hash ? "#" + hash : location.pathname + location.search);
+}
+
+function restoreFromHash() {
+  const h = location.hash.replace(/^#\/?/, "");
+  if (h.startsWith("c/")) {
+    const id = h.slice(2);
+    if (loadSessions().some(x => x.id === id)) { openSession(id); return; }
+  } else if (h.startsWith("s/")) {
+    const name = decodeURIComponent(h.slice(2));
+    if (SCENARIOS.some(s => s.name === name)) { pickScenario(name); return; }
+  }
   newChat();
 }
 
@@ -569,6 +591,7 @@ function renderHist() {
 ═══════════════════════ */
 function newChat() {
   current = { id: null, scenario: null };
+  setRoute("");
   document.getElementById("topScn").style.display  = "none";
   document.getElementById("topEmpty").style.display = "";
   setEnabled(false);
@@ -604,7 +627,7 @@ function renderScenarioPicker() {
             <div class="scn-icon" aria-hidden="true">${scnIcon(s.name, s.description)}</div>
             <div class="scn-name">${escHtml(s.name)}</div>
             <div class="scn-desc">${escHtml(s.description || "")}</div>
-            ${s.cwd ? `<div class="scn-cwd">${escHtml(s.cwd)}</div>` : ""}
+<!--            ${s.cwd ? `<div class="scn-cwd">${escHtml(s.cwd)}</div>` : ""}-->
           </div>`).join("")}
       </div>
     </div>`;
@@ -616,8 +639,13 @@ function renderScenarioPicker() {
 
 function pickScenario(name) {
   current = { id: null, scenario: name };
+  setRoute("s/" + encodeURIComponent(name));
   showBadge(name);
   document.getElementById("feed").innerHTML = "";
+  // 选中场景后,先以一条 AI 气泡显示该场景的引导语(介绍用途+用法)。
+  // 仅前端渲染,不发往后端、不入库,故重开历史会话时不会重复出现。
+  const scn = SCENARIOS.find(s => s.name === name);
+  if (scn && scn.guide) addBubble("bot", scn.guide, true);
   setEnabled(true);
   document.getElementById("input").focus();
 }
@@ -638,6 +666,7 @@ async function openSession(id) {
     const data = await r.json();
     const scn  = (data.conversation && data.conversation.scenario) || DEFAULT_SCN;
     current = { id, scenario: scn };
+    setRoute("c/" + id);
     showBadge(scn);
     renderHist();
     const feed = document.getElementById("feed");
@@ -754,6 +783,7 @@ function onAnswered(convId, question) {
   if (!convId) return;
   if (!current.id) {
     current.id = convId;
+    setRoute("c/" + convId);
     const now = new Date().toISOString();
     upsertSession({ id: convId, scenario: current.scenario, title: question.slice(0, 22), createdAt: now, updatedAt: now });
   } else {

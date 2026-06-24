@@ -136,6 +136,7 @@ class Scenario:
     system_prompt: str
     allowed_tools: list[str]
     cwd: str | None
+    guide: str | None = None
     add_dirs: list[str] = field(default_factory=list)
     model: str | None = None
     max_turns: int = DEFAULT_MAX_TURNS
@@ -166,6 +167,21 @@ def _load_prompt(spec: dict[str, Any], variables: dict[str, str]) -> str:
     return Template(text).safe_substitute(variables)
 
 
+def _load_guide(spec: dict[str, Any], variables: dict[str, str]) -> str | None:
+    """取出场景引导语并做 ${VAR} 替换;未配置 guide/guide_file 时返回 None。
+
+    引导语用于前端选中场景后向用户介绍"这个场景能做什么、怎么用",
+    与提示词共用同一份 variables(场景的 vars)。支持 Markdown。
+    """
+    if spec.get("guide_file"):
+        text = _resolve_relative(spec["guide_file"]).read_text(encoding="utf-8")
+    elif spec.get("guide"):
+        text = str(spec["guide"])
+    else:
+        return None
+    return Template(text).safe_substitute(variables)
+
+
 def load_scenarios(config: dict[str, Any]) -> dict[str, Scenario]:
     """从配置构造场景注册表(按配置中的顺序)。
 
@@ -190,15 +206,23 @@ def load_scenarios(config: dict[str, Any]) -> dict[str, Scenario]:
         if not name:
             logger.error("场景缺少 name 字段,已跳过: %s", spec)
             continue
+        vars_dict = {k: str(v) for k, v in (spec.get("vars") or {}).items()}
         try:
-            prompt = _load_prompt(spec, {k: str(v) for k, v in (spec.get("vars") or {}).items()})
+            prompt = _load_prompt(spec, vars_dict)
         except (OSError, ValueError) as e:
             logger.error("场景 %s 提示词加载失败,已跳过: %s", name, e)
             continue
+        # 引导语是锦上添花:加载失败只记 warning、置空,不让整个场景不可用。
+        try:
+            guide = _load_guide(spec, vars_dict)
+        except OSError as e:
+            logger.warning("场景 %s 引导语加载失败,将不显示引导: %s", name, e)
+            guide = None
         scenarios[name] = Scenario(
             name=name,
             description=spec.get("description") or "",
             system_prompt=prompt,
+            guide=guide,
             allowed_tools=spec.get("allowed_tools") or list(DEFAULT_ALLOWED_TOOLS),
             cwd=spec.get("cwd") or PROJECT_DIR,
             add_dirs=[str(_resolve_relative(d)) for d in (spec.get("add_dirs") or [])],
@@ -454,6 +478,7 @@ async def scenarios_endpoint() -> dict[str, Any]:
             {
                 "name": s.name,
                 "description": s.description,
+                "guide": s.guide,
                 "cwd": s.cwd,
                 "add_dirs": s.add_dirs,
                 "model": s.model,

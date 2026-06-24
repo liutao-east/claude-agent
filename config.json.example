@@ -22,7 +22,9 @@
       "name": "code-qa",
       "description": "代码问答:阅读理解项目代码并回答",
       "//prompt": "system_prompt_file 路径相对 server.py 目录解析;也可改用 system_prompt 内联字符串",
-      "system_prompt_file": "scenarios/code_qa.md"
+      "system_prompt_file": "scenarios/code_qa.md",
+      "//guide": "可选:用户选中该场景后,在聊天区先显示的引导语(介绍用途+用法,支持 Markdown 与 ${VAR} 替换)。可用 guide 内联字符串,或 guide_file 指向相对 server.py 的 markdown 文件;省略则不显示引导。",
+      "guide": "👋 这里能帮你读懂项目代码、解答实现相关的问题。\n\n**试着这样问:**\n- 某个功能的处理流程是怎样的?\n- 某段逻辑为什么这么写、有什么风险?"
     },
     {
       "name": "troubleshoot",
