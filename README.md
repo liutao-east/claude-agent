@@ -7,9 +7,9 @@
 入参选择场景。内置两类场景思路:
 
 - **代码问答(code-qa)**:阅读理解项目代码并回答,引用具体文件路径与行号。
-- **项目问题排查(troubleshoot)**:基于**日志 + 代码**定位线上问题(同时访问代码目录
-  与日志目录)。当前版本实现「查日志 + 查代码」,数据库查询步骤暂缓(已预留 `mcp_servers`
-  配置位)。
+- **项目问题排查(troubleshoot)**:基于**日志 + 代码 + 数据库**定位线上问题(同时访问代码目录
+  与日志目录)。实现「查日志 + 查代码 + 只读查 MySQL」——通过 `mcp_servers` 接入 MySQL MCP
+  服务器,以**只读** `SELECT` 核对数据状态;对外只给业务化结论,不暴露表名/字段/SQL。
 
 Agent 以 **default** 权限模式运行,默认仅允许 `Read` / `Glob` / `Grep` / `Bash` 工具,
 只读分析、**不修改任何文件**。对话历史(含所属场景)持久化在 **SQLite**(默认
@@ -48,7 +48,7 @@ Agent 以 **default** 权限模式运行,默认仅允许 `Read` / `Glob` / `Grep
 | `model` | 全局 `model` | 模型覆盖 |
 | `max_turns` | `10` | 场景默认轮数(请求 `max_turns` 可覆盖) |
 | `vars` | `{}` | 提示词里 `${VAR}` 占位符(如 `${LOG_DIR}` / `${DATABASE}`)的替换值 |
-| `mcp_servers` | `{}` | MCP 服务器配置(预留,如后续接入 MySQL 查询) |
+| `mcp_servers` | `{}` | MCP 服务器配置(如 MySQL 只读查询)。配置后需把对应工具(如 `mcp__mysql__mysql_query`)加入 `allowed_tools`,否则无头服务会因权限提示而挂起 |
 
 `/ask`、`/ask_stream` 的 `scenario` 入参:**新会话**为空时用 `default_scenario`,未知场景名返回
 `400`;**追问**(带 `conversation_id`)沿用会话首轮绑定的场景,若显式传入不同场景返回 `400`。

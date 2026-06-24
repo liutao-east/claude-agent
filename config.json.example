@@ -34,10 +34,27 @@
       "cwd": "D:/path/to/your/project",
       "//add_dirs": "cwd 之外允许访问的目录(日志目录 LOG_DIR),绝对路径",
       "add_dirs": ["/data/logs/neo-star"],
-      "allowed_tools": ["Read", "Glob", "Grep", "Bash"],
+      "//allowed_tools": "接入 MySQL 查询后,需把 mcp__mysql__mysql_query 加进来,否则无头服务会因权限提示而挂起",
+      "allowed_tools": ["Read", "Glob", "Grep", "Bash", "mcp__mysql__mysql_query"],
       "//vars": "提示词里 ${LOG_DIR}/${DATABASE} 等占位符的替换值",
       "vars": { "LOG_DIR": "/data/logs/neo-star", "DATABASE": "neo_star" },
-      "//mcp_servers": "预留:接入 MySQL 查询时在此加 mcp_servers(如 {\"mysql\": {...}})并把 mcp__mysql__* 加进 allowed_tools"
+      "//mcp_servers": "MySQL 只读查询:用 @benborla29/mcp-server-mysql 经 npx 启动;连接信息走 env;ALLOW_*_OPERATION 全置 false 即只读(仅 SELECT)。键名(mysql)对应工具前缀 mcp__mysql__*。Windows 下用 cmd /c 包一层 npx(如下);macOS/Linux 改为 command:'npx', args:['-y','@benborla29/mcp-server-mysql']。",
+      "mcp_servers": {
+        "mysql": {
+          "command": "cmd",
+          "args": ["/c", "npx", "-y", "@benborla29/mcp-server-mysql"],
+          "env": {
+            "MYSQL_HOST": "127.0.0.1",
+            "MYSQL_PORT": "3306",
+            "MYSQL_USER": "your-user",
+            "MYSQL_PASS": "your-password",
+            "MYSQL_DB": "neo_star",
+            "ALLOW_INSERT_OPERATION": "false",
+            "ALLOW_UPDATE_OPERATION": "false",
+            "ALLOW_DELETE_OPERATION": "false"
+          }
+        }
+      }
     }
   ],
 
