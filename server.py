@@ -33,7 +33,7 @@ from typing import Any, AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from claude_agent_sdk import (
@@ -351,6 +351,16 @@ app = FastAPI(title="Code Q&A Service", version="1.0.0")
 
 # 启动即建表(幂等);库文件路径由环境变量 DB_PATH 控制,默认 codeqa.db
 store.init_db()
+
+# 前端单页同源托管:浏览器访问 http://<host>:<port>/ 即得到 static/index.html。
+# 同源后 /ask_stream 等接口免跨域配置。
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+
+@app.get("/")
+async def index() -> FileResponse:
+    """返回前端单页(可爱风格的问答界面)。"""
+    return FileResponse(STATIC_DIR / "index.html", media_type="text/html")
 
 
 class AskRequest(BaseModel):
