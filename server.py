@@ -34,6 +34,7 @@ from typing import Any, AsyncIterator
 from fastapi import FastAPI
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from starlette.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from claude_agent_sdk import (
@@ -385,6 +386,9 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 async def index() -> FileResponse:
     """返回前端单页(可爱风格的问答界面)。"""
     return FileResponse(STATIC_DIR / "index.html", media_type="text/html")
+
+
+app.mount("/styles", StaticFiles(directory=str(STATIC_DIR / "styles")), name="static-styles")
 
 
 class AskRequest(BaseModel):
