@@ -66,12 +66,17 @@ function addCopyButtons(el) {
       navigator.clipboard.writeText(text).then(() => {
         btn.classList.add("copied");
         btn.innerHTML = CHECK_ICON;
+        toast("代码已复制", "success");
         setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = COPY_ICON; }, 2000);
       }).catch(() => {
         const range = document.createRange();
         range.selectNodeContents(code || pre);
         window.getSelection().removeAllRanges();
         window.getSelection().addRange(range);
+        btn.classList.add("copied");
+        btn.innerHTML = CHECK_ICON;
+        toast("已为您选中代码", "success");
+        setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = COPY_ICON; }, 2000);
       });
     });
     pre.appendChild(btn);
@@ -101,7 +106,11 @@ export function attachBotActions(bubbleEl, getMarkdown, { onRegen }) {
     <button class="ma-btn" data-act="copy" title="复制整条" aria-label="复制整条回答">⧉</button>
     <button class="ma-btn" data-act="regen" title="重新生成" aria-label="重新生成回答">↻</button>`;
   bar.querySelector('[data-act="copy"]').addEventListener("click", () => {
-    navigator.clipboard.writeText(getMarkdown()).then(() => toast("已复制整条回答", "success"));
+    navigator.clipboard.writeText(getMarkdown()).then(() => {
+      toast("已复制整条回答", "success");
+    }).catch(() => {
+      toast("复制失败，请重试", "error");
+    });
   });
   bar.querySelector('[data-act="regen"]').addEventListener("click", onRegen);
   bubbleEl.appendChild(bar);
