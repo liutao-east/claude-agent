@@ -79,14 +79,14 @@ export function initSidebarToggle() {
   document.getElementById("sidebarBackdrop").addEventListener("click", closeMobileSidebar);
 }
 
-export function renderStats({ turns, cost }) {
+export function renderStats({ ms }) {
   const el = document.getElementById("topStats");
   if (!el) return;
-  el.textContent = turns ? `${turns} 轮 · $${cost.toFixed(4)}` : "";
+  el.textContent = ms ? "累计 " + (ms / 1000).toFixed(1) + " 秒" : "";
 }
 
 export function clearStats() {
-  renderStats({ turns: 0, cost: 0 });
+  renderStats({ ms: 0 });
 }
 
 // 把发送按钮在「发送态」和「停止态」之间切换

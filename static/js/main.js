@@ -13,7 +13,7 @@ let SCENARIOS   = [];
 let DEFAULT_SCN = null;
 let current     = null;   // { id, scenario }
 let busy        = false;
-let stats       = { turns: 0, cost: 0 };
+let stats       = { ms: 0 };
 let aborter     = null;
 
 /* ═══════════════════════
@@ -108,7 +108,7 @@ function renderHist() {
 ═══════════════════════ */
 function newChat() {
   current = { id: null, scenario: null };
-  stats = { turns: 0, cost: 0 };
+  stats = { ms: 0 };
   clearStats();
   setRoute("");
   document.getElementById("topScn").style.display  = "none";
@@ -174,7 +174,7 @@ function pickScenario(name) {
 async function openSession(id) {
   if (busy) { toast("请等当前回答完成再切换会话"); return; }
   setEnabled(false);
-  stats = { turns: 0, cost: 0 };
+  stats = { ms: 0 };
   clearStats();
   try {
     const data = await fetchMessages(id);
@@ -203,6 +203,10 @@ async function ask(question) {
   addBubble("user", question, false);
   busy = true; setEnabled(false);
 
+  // 立即可停止：发送瞬间即把发送键切到停止态，不必等到第一个 token 出现。
+  aborter = new AbortController();
+  setSending(true, () => { aborter && aborter.abort(); });
+
   const thinkEl = addThinking();
   let secs = 0;
   const timer = setInterval(() => {
@@ -223,7 +227,40 @@ async function ask(question) {
     started = true;
   };
 
-  aborter = new AbortController();
+  // 流式渲染节流：合并 token 增量，按时间窗口 + rAF 重渲染，
+  // 避免每个 token 都全量 marked.parse 导致长回答掉帧。
+  let renderTimer = null, renderRaf = null, lastRender = 0;
+  const RENDER_INTERVAL = 60;  // ms，约 16fps
+  const flushRender = () => {
+    if (renderRaf) { cancelAnimationFrame(renderRaf); renderRaf = null; }
+    if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
+  };
+  const doRender = () => {
+    renderMd(contentEl, answer, false);
+    // 流式进行中：在回答末尾追加跳动气泡，避免中途停顿像卡死。
+    const ind = document.createElement("div");
+    ind.className = "answering";
+    ind.innerHTML = `<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>`;
+    contentEl.appendChild(ind);
+    lastRender = performance.now();
+    renderRaf = null;
+    scrollBottom();
+  };
+  const clearAnswering = () => {
+    const ind = contentEl && contentEl.querySelector(".answering");
+    if (ind) ind.remove();
+  };
+  const scheduleRender = () => {
+    if (renderRaf || renderTimer) return;  // 已挂起：到点执行时读取最新 answer 一起渲染
+    if (performance.now() - lastRender >= RENDER_INTERVAL) {
+      renderRaf = requestAnimationFrame(doRender);
+    } else {
+      renderTimer = setTimeout(() => {
+        renderTimer = null;
+        renderRaf = requestAnimationFrame(doRender);
+      }, RENDER_INTERVAL);
+    }
+  };
 
   try {
     await askStream(
@@ -232,27 +269,24 @@ async function ask(question) {
         signal: aborter.signal,
         onEvent: (event, data) => {
           if (event === "token") {
-            if (!started) {
-              startBubble();
-              setSending(true, () => { aborter && aborter.abort(); });
-            }
+            if (!started) startBubble();
             answer += (data.text || "");
-            renderMd(contentEl, answer, false);
-            scrollBottom();
+            scheduleRender();
           } else if (event === "done") {
             if (!started) startBubble();
+            flushRender();
             answer = data.answer || answer;
             renderMd(contentEl, answer, true);
             const meta = document.createElement("div");
             meta.className = "msg-meta";
-            meta.innerHTML = `<span>${data.num_turns ?? 0} 轮对话</span><span class="meta-dot"></span><span>$${(data.cost_usd ?? 0).toFixed(4)}</span>`;
+            meta.innerHTML = `<span>本轮耗时 ${(data.elapsed_ms / 1000).toFixed(1)} 秒</span>`;
             bubble.appendChild(meta);
             attachBotActions(bubble, () => answer, { onRegen: () => ask(question) });
-            stats.turns += data.num_turns ?? 0;
-            stats.cost  += data.cost_usd ?? 0;
+            stats.ms += data.elapsed_ms ?? 0;
             renderStats(stats);
             onAnswered(data.conversation_id, question);
           } else if (event === "error") {
+            flushRender();
             clearInterval(timer);
             if (!started) thinkEl.remove();
             showError(data.error || "未知错误", () => ask(question));
@@ -261,6 +295,7 @@ async function ask(question) {
       }
     );
   } catch (e) {
+    flushRender();
     clearInterval(timer);
     if (thinkEl && thinkEl.parentNode) thinkEl.remove();
     if (e.name === "AbortError") {
@@ -269,6 +304,8 @@ async function ask(question) {
       showError(e.httpStatus ? ("HTTP " + e.httpStatus + " · " + e.message) : ("网络错误：" + e.message), () => ask(question));
     }
   } finally {
+    flushRender();
+    clearAnswering();
     clearInterval(timer);
     aborter = null;
     setSending(false);
@@ -308,7 +345,7 @@ function switchScenario(name) {
   if (hasMsgs && name !== (current && current.scenario)) {
     if (!confirm(`切换到「${name}」将开启一条新对话，当前对话会保留在历史中。继续？`)) return;
   }
-  stats = { turns: 0, cost: 0 };
+  stats = { ms: 0 };
   clearStats();
   current = { id: null, scenario: name };
   setRoute("s/" + encodeURIComponent(name));

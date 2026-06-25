@@ -14,7 +14,8 @@ test("解析完整 token 事件并保留残片", () => {
 });
 
 test("done 事件携带结构化数据", () => {
-  const { events } = parseSSEBuffer('event: done\ndata: {"answer":"a","num_turns":3}\n\n');
+  const { events } = parseSSEBuffer('event: done\ndata: {"answer":"a","num_turns":3,"elapsed_ms":1250}\n\n');
   assert.equal(events[0].event, "done");
   assert.equal(events[0].data.num_turns, 3);
+  assert.equal(events[0].data.elapsed_ms, 1250);
 });

@@ -333,6 +333,14 @@
   .thinking-text { font-size: 13px; color: var(--text-3); }
   .thinking-secs { font-size: 11px; color: var(--text-3); min-width: 26px; }
 
+  /* 流式回答进行中指示（回答气泡末尾）：复用思考态的三点动画 */
+  .answering {
+    display: flex; align-items: center; gap: 7px;
+    margin-top: 8px;
+    font-size: 12px; color: var(--text-3);
+  }
+  .answering .dots i { width: 5px; height: 5px; }
+
   /* ── 输入区 ── */
   .composer {
     flex-shrink: 0;

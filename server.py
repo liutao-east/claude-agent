@@ -28,6 +28,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from string import Template
@@ -553,6 +554,7 @@ async def ask(payload: AskRequest):
     cost_usd = 0.0
     num_turns = 0
     sdk_session_id: str | None = None
+    t0 = time.monotonic()
     try:
         async for kind, data in run_agent(
             payload.question, scenario, max_turns, conv.sdk_session_id
@@ -563,6 +565,7 @@ async def ask(payload: AskRequest):
                 cost_usd = data["cost_usd"]
                 num_turns = data["num_turns"]
                 sdk_session_id = data.get("session_id")
+                elapsed_ms = int((time.monotonic() - t0) * 1000)
             elif kind == "error":
                 return JSONResponse(
                     status_code=502,
@@ -581,7 +584,7 @@ async def ask(payload: AskRequest):
                             cost_usd, num_turns, sdk_session_id)
 
     return {"answer": answer, "cost_usd": cost_usd, "num_turns": num_turns,
-            "conversation_id": conv.id}
+            "elapsed_ms": elapsed_ms, "conversation_id": conv.id}
 
 
 @app.post("/ask_stream")
@@ -608,6 +611,7 @@ async def ask_stream(payload: AskRequest):
     async def event_generator() -> AsyncIterator[str]:
         try:
             sdk_session_id: str | None = None
+            t0 = time.monotonic()
             async for kind, data in run_agent(
                 payload.question, scenario, max_turns, conv.sdk_session_id
             ):
@@ -615,6 +619,7 @@ async def ask_stream(payload: AskRequest):
                     yield sse("token", {"text": data})
                 elif kind == "result":
                     sdk_session_id = data.get("session_id")
+                    data["elapsed_ms"] = int((time.monotonic() - t0) * 1000)
                     yield sse("done", {**data, "conversation_id": conv.id})
                     # 成功结束:把本轮问答落库。
                     await run_in_threadpool(
