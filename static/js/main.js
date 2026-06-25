@@ -4,7 +4,7 @@ import { fetchScenarios, fetchMessages, askStream } from "./api.js";
 import * as sessions from "./sessions.js";
 import { scnIcon } from "./scenarios.js";
 import { addBubble, addThinking, showError, renderMd } from "./render.js";
-import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle } from "./ui.js";
+import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar } from "./ui.js";
 
 /* ═══════════════════════
    状态
@@ -111,6 +111,7 @@ function newChat() {
   setEnabled(false);
   renderHist();
   renderScenarioPicker();
+  closeMobileSidebar();
 }
 
 function renderScenarioPicker() {
@@ -162,6 +163,7 @@ function pickScenario(name) {
   if (scn && scn.guide) addBubble("bot", scn.guide, true);
   setEnabled(true);
   document.getElementById("input").focus();
+  closeMobileSidebar();
 }
 
 async function openSession(id) {
@@ -178,6 +180,7 @@ async function openSession(id) {
     feed.innerHTML = "";
     (data.messages || []).forEach(m => addBubble(m.role === "user" ? "user" : "bot", m.content, true));
     setEnabled(true);
+    closeMobileSidebar();
     scrollBottom();
   } catch (e) {
     if (e && e.status === 404) { toast("该会话在后端已不存在，已从列表移除"); sessions.removeSession(id); return; }

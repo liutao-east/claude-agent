@@ -42,11 +42,28 @@ export function showBadge(name) {
 
 const SIDEBAR_KEY = "codeqa.sidebarCollapsed";
 
+function isNarrow() {
+  return window.matchMedia("(max-width: 760px)").matches;
+}
+
+export function closeMobileSidebar() {
+  document.body.classList.remove("sidebar-open");
+}
+
 export function initSidebarToggle() {
   const collapsed = localStorage.getItem(SIDEBAR_KEY) === "1";
-  document.body.classList.toggle("sidebar-collapsed", collapsed);
+  if (!isNarrow()) {
+    document.body.classList.toggle("sidebar-collapsed", collapsed);
+  }
+
   document.getElementById("collapseBtn").addEventListener("click", () => {
-    const now = document.body.classList.toggle("sidebar-collapsed");
-    localStorage.setItem(SIDEBAR_KEY, now ? "1" : "0");
+    if (isNarrow()) {
+      document.body.classList.toggle("sidebar-open");
+    } else {
+      const now = document.body.classList.toggle("sidebar-collapsed");
+      localStorage.setItem(SIDEBAR_KEY, now ? "1" : "0");
+    }
   });
+
+  document.getElementById("sidebarBackdrop").addEventListener("click", closeMobileSidebar);
 }

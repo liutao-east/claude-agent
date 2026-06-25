@@ -378,3 +378,24 @@
   }
   .collapse-btn:hover { background: var(--surface-2, #F8FAFC); }
   body.sidebar-collapsed .sidebar { display: none; }
+
+@media (max-width: 760px) {
+  .sidebar {
+    position: fixed; left: 0; top: 0; height: 100vh; z-index: 50;
+    transform: translateX(-100%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+    box-shadow: var(--sh-md, 0 4px 14px rgba(0,0,0,.08));
+  }
+  body.sidebar-open .sidebar { transform: translateX(0); }
+  /* 窄屏忽略折叠态，统一用浮层模式 */
+  body.sidebar-collapsed .sidebar { display: flex; }
+  .sidebar-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.25); z-index: 40;
+    display: none;
+  }
+  body.sidebar-open .sidebar-backdrop { display: block; }
+}
+@media (min-width: 761px) {
+  .sidebar-backdrop { display: none !important; }
+}
