@@ -2,7 +2,7 @@
 import { escHtml, relTime } from "./util.js";
 import { fetchScenarios, fetchMessages, askStream } from "./api.js";
 import * as sessions from "./sessions.js";
-import { scnIcon } from "./scenarios.js";
+import { pickIcon } from "./scenarios.js";
 import { addBubble, addThinking, showError, renderMd, waitingText, attachBotActions } from "./render.js";
 import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar, toggleScnMenu, renderStats, clearStats, setSending } from "./ui.js";
 
@@ -149,7 +149,7 @@ function renderScenarioPicker() {
       <div class="scn-grid">
         ${SCENARIOS.map(s => `
           <div class="scn-card" data-name="${escHtml(s.name)}" tabindex="0" role="button" aria-label="选择场景：${escHtml(s.name)}">
-            <div class="scn-icon" aria-hidden="true">${scnIcon(s.name, s.description)}</div>
+            <div class="scn-icon" aria-hidden="true">${pickIcon(s.name)}</div>
             <div class="scn-name">${escHtml(s.name)}</div>
             <div class="scn-desc">${escHtml(s.description || "")}</div>
 <!--            ${s.cwd ? `<div class="scn-cwd">${escHtml(s.cwd)}</div>` : ""}-->

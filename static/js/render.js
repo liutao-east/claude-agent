@@ -1,6 +1,6 @@
 // DOM 渲染辅助:气泡、思考态、错误、Markdown 渲染。
 import { escHtml } from "./util.js";
-import { USER_AV, BOT_AV } from "./scenarios.js";
+import { BOT_AVATAR, userAvatar } from "./scenarios.js";
 import { toast, scrollBottom } from "./ui.js";
 
 // marked / hljs 通过 CDN <script> 注入到全局,这里按原行为用 window.* 访问。
@@ -12,7 +12,7 @@ export function addBubble(role, text, withMd) {
   const feed = document.getElementById("feed");
   const msg  = document.createElement("div");
   msg.className = "msg " + (role === "user" ? "user" : "bot");
-  msg.innerHTML = `<div class="av" aria-hidden="true">${role === "user" ? USER_AV : BOT_AV}</div><div class="bubble"><div class="content"></div></div>`;
+  msg.innerHTML = `<div class="av" aria-hidden="true">${role === "user" ? userAvatar() : BOT_AVATAR}</div><div class="bubble"><div class="content"></div></div>`;
   const contentEl = msg.querySelector(".content");
   if (role === "user")    contentEl.textContent = text;
   else if (withMd)        renderMd(contentEl, text, true);
@@ -27,7 +27,7 @@ export function addThinking() {
   msg.className = "msg bot";
   msg.setAttribute("aria-live", "polite");
   msg.innerHTML = `
-    <div class="av" aria-hidden="true">${BOT_AV}</div>
+    <div class="av" aria-hidden="true">${BOT_AVATAR}</div>
     <div class="bubble thinking-bubble">
       <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
       <span class="thinking-text">正在思考</span>
