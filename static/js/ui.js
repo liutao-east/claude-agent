@@ -5,13 +5,24 @@
 let _send = null;
 export function setSendHandler(fn) { _send = fn; }
 
-export function toast(msg) {
+export function toast(msg, type = "info") {
   const t = document.getElementById("toast");
-  t.textContent = msg; t.classList.add("show");
+  t.textContent = msg;
+  t.className = "toast show " + type;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("show"), 3500);
 }
 let toastTimer = null;
+
+export function initScrollBottom() {
+  const feed = document.getElementById("feed");
+  const btn = document.getElementById("scrollBottomBtn");
+  feed.addEventListener("scroll", () => {
+    const atBottom = feed.scrollTop + feed.clientHeight >= feed.scrollHeight - 16;
+    btn.classList.toggle("show", !atBottom);
+  });
+  btn.addEventListener("click", () => { feed.scrollTop = feed.scrollHeight; });
+}
 
 export function scrollBottom() {
   const f = document.getElementById("feed"); f.scrollTop = f.scrollHeight;

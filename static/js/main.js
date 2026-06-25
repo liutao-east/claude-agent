@@ -4,7 +4,7 @@ import { fetchScenarios, fetchMessages, askStream } from "./api.js";
 import * as sessions from "./sessions.js";
 import { pickIcon } from "./scenarios.js";
 import { addBubble, addThinking, showError, renderMd, waitingText, attachBotActions } from "./render.js";
-import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar, toggleScnMenu, renderStats, clearStats, setSending } from "./ui.js";
+import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar, toggleScnMenu, renderStats, clearStats, setSending, initScrollBottom } from "./ui.js";
 
 /* ═══════════════════════
    状态
@@ -34,6 +34,7 @@ setSendHandler(send);
 init();
 async function init() {
   initSidebarToggle();
+  initScrollBottom();
   renderHist();
   try {
     const data = await fetchScenarios();

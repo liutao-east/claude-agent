@@ -372,19 +372,13 @@
   .hint { text-align: center; font-size: 11px; color: var(--text-3); margin-top: 8px; }
 
   /* ── Toast ── */
-  .toast {
-    position: fixed; top: 16px; left: 50%;
-    transform: translateX(-50%) translateY(-10px);
-    background: var(--text); color: #fff;
-    padding: 9px 16px; border-radius: 99px;
-    font-size: 13px; font-weight: 500;
-    z-index: 200; pointer-events: none;
-    opacity: 0;
-    transition: opacity .2s var(--ease), transform .2s var(--ease);
-    white-space: nowrap;
-    box-shadow: 0 4px 16px rgba(0,0,0,.18);
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast { position:fixed; bottom:40px; left:50%; transform:translateX(-50%) translateY(20px);
+    padding:10px 22px; border-radius:999px; color:#fff; font-size:13px; opacity:0; z-index:9999;
+    transition:opacity var(--t) var(--ease), transform var(--t) var(--ease); box-shadow:0 6px 20px rgba(0,0,0,.12); white-space:nowrap; pointer-events:none; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.success { background:linear-gradient(135deg,var(--mint),#3fc8aa); }
+  .toast.error   { background:linear-gradient(135deg,#ff788c,#ff4d6d); }
+  .toast.info    { background:linear-gradient(135deg,#7799ff,#8672e8); }
 
   /* ── 侧栏折叠按钮 ── */
   .collapse-btn {
@@ -496,4 +490,11 @@
 @keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
 .dots i { animation: cuteBlink 1.2s infinite ease-in-out; box-shadow:0 0 6px rgba(134,193,255,.4); }
 @keyframes cuteBlink { 0%,100%{opacity:.3; transform:scale(.7);} 50%{opacity:1; transform:scale(1.15);} }
+
+/* === Task 15: 云朵 toast + 回到底部悬浮按钮 === */
+.main { position: relative; }
+.scroll-bottom { position:absolute; bottom:90px; right:24px; width:40px; height:40px; border-radius:50%;
+  border:none; background:#fff; color:var(--blue); font-size:18px; box-shadow:var(--sh-md); cursor:pointer; display:none; }
+.scroll-bottom.show { display:flex; align-items:center; justify-content:center; }
+.scroll-bottom:hover { background:var(--blue-light); transform:translateY(-3px); transition:all var(--t) var(--ease); }
 
