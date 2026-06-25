@@ -3,7 +3,7 @@ import { escHtml, relTime } from "./util.js";
 import { fetchScenarios, fetchMessages, askStream } from "./api.js";
 import * as sessions from "./sessions.js";
 import { scnIcon } from "./scenarios.js";
-import { addBubble, addThinking, showError, renderMd } from "./render.js";
+import { addBubble, addThinking, showError, renderMd, waitingText } from "./render.js";
 import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar, toggleScnMenu, renderStats, clearStats, setSending } from "./ui.js";
 
 /* ═══════════════════════
@@ -217,8 +217,10 @@ async function send() {
   let secs = 0;
   const timer = setInterval(() => {
     secs++;
-    const el = thinkEl.querySelector(".thinking-secs");
-    if (el) el.textContent = secs + "s";
+    const sEl = thinkEl.querySelector(".thinking-secs");
+    const tEl = thinkEl.querySelector(".thinking-text");
+    if (sEl) sEl.textContent = secs + "s";
+    if (tEl) tEl.textContent = waitingText(secs);
   }, 1000);
 
   let bubble = null, contentEl = null, answer = "", started = false;

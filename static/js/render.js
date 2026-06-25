@@ -80,3 +80,9 @@ export function renderMd(el, text, hl) {
     el.textContent = text;
   }
 }
+
+export function waitingText(secs) {
+  if (secs < 10) return "正在思考";
+  if (secs < 30) return "正在查阅相关代码 / 日志";
+  return "仍在分析，复杂排查可能需要 1–2 分钟";
+}
