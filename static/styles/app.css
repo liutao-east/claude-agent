@@ -366,3 +366,15 @@
     box-shadow: 0 4px 16px rgba(0,0,0,.18);
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── 侧栏折叠按钮 ── */
+  .collapse-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    border: none; background: transparent;
+    color: var(--text-2, #64748B);
+    border-radius: 8px; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .collapse-btn:hover { background: var(--surface-2, #F8FAFC); }
+  body.sidebar-collapsed .sidebar { display: none; }

@@ -39,3 +39,14 @@ export function showBadge(name) {
   document.getElementById("topScn").style.display   = "";
   document.getElementById("topBadge").textContent   = name;
 }
+
+const SIDEBAR_KEY = "codeqa.sidebarCollapsed";
+
+export function initSidebarToggle() {
+  const collapsed = localStorage.getItem(SIDEBAR_KEY) === "1";
+  document.body.classList.toggle("sidebar-collapsed", collapsed);
+  document.getElementById("collapseBtn").addEventListener("click", () => {
+    const now = document.body.classList.toggle("sidebar-collapsed");
+    localStorage.setItem(SIDEBAR_KEY, now ? "1" : "0");
+  });
+}

@@ -4,7 +4,7 @@ import { fetchScenarios, fetchMessages, askStream } from "./api.js";
 import * as sessions from "./sessions.js";
 import { scnIcon } from "./scenarios.js";
 import { addBubble, addThinking, showError, renderMd } from "./render.js";
-import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler } from "./ui.js";
+import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle } from "./ui.js";
 
 /* ═══════════════════════
    状态
@@ -31,6 +31,7 @@ setSendHandler(send);
 ═══════════════════════ */
 init();
 async function init() {
+  initSidebarToggle();
   renderHist();
   try {
     const data = await fetchScenarios();
