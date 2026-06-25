@@ -63,12 +63,7 @@ function addCopyButtons(el) {
     btn.addEventListener("click", () => {
       const code = pre.querySelector("code");
       const text = code ? code.innerText : pre.innerText;
-      navigator.clipboard.writeText(text).then(() => {
-        btn.classList.add("copied");
-        btn.innerHTML = CHECK_ICON;
-        toast("代码已复制", "success");
-        setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = COPY_ICON; }, 2000);
-      }).catch(() => {
+      const doFallback = () => {
         const range = document.createRange();
         range.selectNodeContents(code || pre);
         window.getSelection().removeAllRanges();
@@ -77,7 +72,17 @@ function addCopyButtons(el) {
         btn.innerHTML = CHECK_ICON;
         toast("已为您选中代码", "success");
         setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = COPY_ICON; }, 2000);
-      });
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          btn.classList.add("copied");
+          btn.innerHTML = CHECK_ICON;
+          toast("代码已复制", "success");
+          setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = COPY_ICON; }, 2000);
+        }).catch(doFallback);
+      } else {
+        doFallback();
+      }
     });
     pre.appendChild(btn);
   });
@@ -106,11 +111,15 @@ export function attachBotActions(bubbleEl, getMarkdown, { onRegen }) {
     <button class="ma-btn" data-act="copy" title="复制整条" aria-label="复制整条回答">⧉</button>
     <button class="ma-btn" data-act="regen" title="重新生成" aria-label="重新生成回答">↻</button>`;
   bar.querySelector('[data-act="copy"]').addEventListener("click", () => {
-    navigator.clipboard.writeText(getMarkdown()).then(() => {
-      toast("已复制整条回答", "success");
-    }).catch(() => {
-      toast("复制失败，请重试", "error");
-    });
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(getMarkdown()).then(() => {
+        toast("已复制整条回答", "success");
+      }).catch(() => {
+        toast("复制失败，请重试", "error");
+      });
+    } else {
+      toast("您的浏览器不支持复制功能", "error");
+    }
   });
   bar.querySelector('[data-act="regen"]').addEventListener("click", onRegen);
   bubbleEl.appendChild(bar);
