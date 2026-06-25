@@ -8,6 +8,24 @@ import { toast, scrollBottom } from "./ui.js";
 const COPY_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 const CHECK_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
+// 兼容性复制：优先 Clipboard API，降级 execCommand，返回 Promise<bool>
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(() => true).catch(() => execCopy(text));
+  }
+  return Promise.resolve(execCopy(text));
+}
+function execCopy(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  const ok = document.execCommand("copy");
+  document.body.removeChild(ta);
+  return ok;
+}
+
 export function addBubble(role, text, withMd) {
   const feed = document.getElementById("feed");
   const msg  = document.createElement("div");
@@ -63,26 +81,12 @@ function addCopyButtons(el) {
     btn.addEventListener("click", () => {
       const code = pre.querySelector("code");
       const text = code ? code.innerText : pre.innerText;
-      const doFallback = () => {
-        const range = document.createRange();
-        range.selectNodeContents(code || pre);
-        window.getSelection().removeAllRanges();
-        window.getSelection().addRange(range);
+      copyText(text).then(ok => {
         btn.classList.add("copied");
         btn.innerHTML = CHECK_ICON;
-        toast("已为您选中代码", "success");
+        toast(ok ? "代码已复制" : "代码已选中（不支持自动复制）", "success");
         setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = COPY_ICON; }, 2000);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
-          btn.classList.add("copied");
-          btn.innerHTML = CHECK_ICON;
-          toast("代码已复制", "success");
-          setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = COPY_ICON; }, 2000);
-        }).catch(doFallback);
-      } else {
-        doFallback();
-      }
+      });
     });
     pre.appendChild(btn);
   });
@@ -111,15 +115,9 @@ export function attachBotActions(bubbleEl, getMarkdown, { onRegen }) {
     <button class="ma-btn" data-act="copy" title="复制整条" aria-label="复制整条回答">⧉</button>
     <button class="ma-btn" data-act="regen" title="重新生成" aria-label="重新生成回答">↻</button>`;
   bar.querySelector('[data-act="copy"]').addEventListener("click", () => {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(getMarkdown()).then(() => {
-        toast("已复制整条回答", "success");
-      }).catch(() => {
-        toast("复制失败，请重试", "error");
-      });
-    } else {
-      toast("您的浏览器不支持复制功能", "error");
-    }
+    copyText(getMarkdown()).then(ok => {
+      toast(ok ? "已复制整条回答" : "复制失败，请手动复制", "success");
+    });
   });
   bar.querySelector('[data-act="regen"]').addEventListener("click", onRegen);
   bubbleEl.appendChild(bar);
