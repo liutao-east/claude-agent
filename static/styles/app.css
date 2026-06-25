@@ -494,7 +494,9 @@
 /* === Task 15: 云朵 toast + 回到底部悬浮按钮 === */
 .main { position: relative; }
 .scroll-bottom { position:absolute; bottom:90px; right:24px; width:40px; height:40px; border-radius:50%;
-  border:none; background:#fff; color:var(--blue); font-size:18px; box-shadow:var(--sh-md); cursor:pointer; display:none; }
-.scroll-bottom.show { display:flex; align-items:center; justify-content:center; }
-.scroll-bottom:hover { background:var(--blue-light); transform:translateY(-3px); transition:all var(--t) var(--ease); }
+  border:none; background:#fff; color:var(--blue); font-size:18px; box-shadow:var(--sh-md); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity var(--t) var(--ease), transform var(--t) var(--ease), background var(--t) var(--ease); }
+.scroll-bottom.show { opacity:1; pointer-events:auto; }
+.scroll-bottom:hover { background:var(--blue-light); transform:translateY(-3px); }
 
