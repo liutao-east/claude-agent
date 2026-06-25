@@ -80,3 +80,13 @@ export function toggleScnMenu(show) {
   menu.hidden = !show;
   btn.setAttribute("aria-expanded", String(show));
 }
+
+export function renderStats({ turns, cost }) {
+  const el = document.getElementById("topStats");
+  if (!el) return;
+  el.textContent = turns ? `${turns} 轮 · $${cost.toFixed(4)}` : "";
+}
+
+export function clearStats() {
+  renderStats({ turns: 0, cost: 0 });
+}

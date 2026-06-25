@@ -4,7 +4,7 @@ import { fetchScenarios, fetchMessages, askStream } from "./api.js";
 import * as sessions from "./sessions.js";
 import { scnIcon } from "./scenarios.js";
 import { addBubble, addThinking, showError, renderMd } from "./render.js";
-import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar, toggleScnMenu } from "./ui.js";
+import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar, toggleScnMenu, renderStats, clearStats } from "./ui.js";
 
 /* ═══════════════════════
    状态
@@ -13,6 +13,7 @@ let SCENARIOS   = [];
 let DEFAULT_SCN = null;
 let current     = null;   // { id, scenario }
 let busy        = false;
+let stats       = { turns: 0, cost: 0 };
 
 /* ═══════════════════════
    注入依赖回调(避免循环依赖)
@@ -111,6 +112,8 @@ function renderHist() {
 ═══════════════════════ */
 function newChat() {
   current = { id: null, scenario: null };
+  stats = { turns: 0, cost: 0 };
+  clearStats();
   setRoute("");
   document.getElementById("topScn").style.display  = "none";
   document.getElementById("topEmpty").style.display = "";
@@ -175,6 +178,8 @@ function pickScenario(name) {
 async function openSession(id) {
   if (busy) { toast("请等当前回答完成再切换会话"); return; }
   setEnabled(false);
+  stats = { turns: 0, cost: 0 };
+  clearStats();
   try {
     const data = await fetchMessages(id);
     const scn  = (data.conversation && data.conversation.scenario) || DEFAULT_SCN;
@@ -244,6 +249,9 @@ async function send() {
             meta.className = "msg-meta";
             meta.innerHTML = `<span>${data.num_turns ?? 0} 轮对话</span><span class="meta-dot"></span><span>$${(data.cost_usd ?? 0).toFixed(4)}</span>`;
             bubble.appendChild(meta);
+            stats.turns += data.num_turns ?? 0;
+            stats.cost  += data.cost_usd ?? 0;
+            renderStats(stats);
             onAnswered(data.conversation_id, q);
           } else if (event === "error") {
             clearInterval(timer);
@@ -302,6 +310,8 @@ function switchScenario(name) {
   if (hasMsgs && name !== (current && current.scenario)) {
     if (!confirm(`切换到「${name}」将开启一条新对话，当前对话会保留在历史中。继续？`)) return;
   }
+  stats = { turns: 0, cost: 0 };
+  clearStats();
   current = { id: null, scenario: name };
   setRoute("s/" + encodeURIComponent(name));
   showBadge(name);
