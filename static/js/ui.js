@@ -90,3 +90,19 @@ export function renderStats({ turns, cost }) {
 export function clearStats() {
   renderStats({ turns: 0, cost: 0 });
 }
+
+// 把发送按钮在「发送态」和「停止态」之间切换
+// on=true -> 停止态(红■)；on=false -> 发送态(纸飞机)
+// 停止态时 onStop 作为按钮的 click 回调
+export function setSending(on, onStop) {
+  const btn = document.getElementById("sendBtn");
+  if (!btn) return;
+  btn.classList.toggle("is-stop", on);
+  btn.setAttribute("aria-label", on ? "停止" : "发送消息");
+  btn.innerHTML = on
+    ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>`
+    : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+  // 停止态：绑定 onStop；发送态：解绑
+  // send() 在 busy=true 时会提前返回，所以 addEventListener("click", send) 不会误触发
+  btn.onclick = on ? onStop : null;
+}

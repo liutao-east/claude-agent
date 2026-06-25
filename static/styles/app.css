@@ -423,3 +423,7 @@
 }
 .scn-menu-item:hover { background: var(--surface-2, #F8FAFC); }
 .scn-menu-item.current { background: var(--primary-l, #EEF3FF); }
+
+/* ── 停止按钮状态 ── */
+.send-btn.is-stop { background: var(--danger, #EF4444); }
+.send-btn.is-stop:hover:not(:disabled) { background: #dc2626; transform: none; }

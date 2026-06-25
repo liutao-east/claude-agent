@@ -4,7 +4,7 @@ import { fetchScenarios, fetchMessages, askStream } from "./api.js";
 import * as sessions from "./sessions.js";
 import { scnIcon } from "./scenarios.js";
 import { addBubble, addThinking, showError, renderMd } from "./render.js";
-import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar, toggleScnMenu, renderStats, clearStats } from "./ui.js";
+import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar, toggleScnMenu, renderStats, clearStats, setSending } from "./ui.js";
 
 /* ═══════════════════════
    状态
@@ -14,6 +14,7 @@ let DEFAULT_SCN = null;
 let current     = null;   // { id, scenario }
 let busy        = false;
 let stats       = { turns: 0, cost: 0 };
+let aborter     = null;
 
 /* ═══════════════════════
    注入依赖回调(避免循环依赖)
@@ -230,14 +231,19 @@ async function send() {
     started = true;
   };
 
+  aborter = new AbortController();
+
   try {
     await askStream(
       { question: q, scenario: current.scenario, conversation_id: current.id },
       {
-        signal: undefined,
+        signal: aborter.signal,
         onEvent: (event, data) => {
           if (event === "token") {
-            if (!started) startBubble();
+            if (!started) {
+              startBubble();
+              setSending(true, () => { aborter && aborter.abort(); });
+            }
             answer += (data.text || "");
             renderMd(contentEl, answer, false);
             scrollBottom();
@@ -262,10 +268,17 @@ async function send() {
       }
     );
   } catch (e) {
-    clearInterval(timer); thinkEl.remove();
-    showError("网络错误：" + e.message);
+    clearInterval(timer);
+    if (thinkEl && thinkEl.parentNode) thinkEl.remove();
+    if (e.name === "AbortError") {
+      // 用户主动停止，保留已出文字，不报错
+    } else {
+      showError(e.httpStatus ? ("HTTP " + e.httpStatus + " · " + e.message) : ("网络错误：" + e.message));
+    }
   } finally {
     clearInterval(timer);
+    aborter = null;
+    setSending(false);
     busy = false; setEnabled(true);
     document.getElementById("input").focus();
     scrollBottom();
