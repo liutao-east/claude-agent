@@ -76,6 +76,7 @@
     flex-shrink: 0;
     height: 100%;
     background: rgba(255,255,255,.75);
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border-right: 1px solid var(--border);
     display: flex;
@@ -183,6 +184,7 @@
     padding: 0 20px;
     border-bottom: 1px solid var(--border);
     background: rgba(255,255,255,.70);
+    -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
   }
   .topbar-ico { color: var(--text-3); flex-shrink: 0; display: flex; }
@@ -337,6 +339,7 @@
     padding: 12px 20px 16px;
     border-top: 1px solid var(--border);
     background: rgba(255,255,255,.65);
+    -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
   }
   .composer-inner { max-width: 820px; margin: 0 auto; }
