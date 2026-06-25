@@ -77,19 +77,6 @@ export function initSidebarToggle() {
   });
 
   document.getElementById("sidebarBackdrop").addEventListener("click", closeMobileSidebar);
-
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest("#topScn")) toggleScnMenu(false);
-  });
-}
-
-export function toggleScnMenu(show) {
-  const menu = document.getElementById("scnMenu");
-  const btn  = document.getElementById("scnSwitch");
-  if (!menu || !btn) return;
-  if (show === undefined) show = menu.hidden;
-  menu.hidden = !show;
-  btn.setAttribute("aria-expanded", String(show));
 }
 
 export function renderStats({ turns, cost }) {

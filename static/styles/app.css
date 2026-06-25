@@ -413,29 +413,6 @@
   .sidebar-backdrop { display: none !important; }
 }
 
-/* ── 顶栏场景切换器 ── */
-.scn-switch {
-  display: inline-flex; align-items: center; gap: 5px;
-  border: none; background: transparent; cursor: pointer;
-  padding: 2px 6px; border-radius: 8px; font-family: inherit;
-}
-.scn-switch:hover { background: var(--surface-2, #F8FAFC); }
-#topScn { position: relative; }
-.scn-menu {
-  position: absolute; top: calc(100% + 6px); left: 0;
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #E4E9F0);
-  border-radius: 10px; box-shadow: var(--sh-md, 0 4px 14px rgba(0,0,0,.08));
-  padding: 6px; z-index: 60; min-width: 200px;
-}
-.scn-menu[hidden] { display: none; }
-.scn-menu-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; border-radius: 8px;
-  cursor: pointer; font-size: 13px;
-}
-.scn-menu-item:hover { background: var(--surface-2, #F8FAFC); }
-.scn-menu-item.current { background: var(--primary-l, #EEF3FF); }
 
 /* ── 停止按钮状态 ── */
 .send-btn.is-stop { background: var(--danger, #EF4444); }

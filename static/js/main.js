@@ -4,7 +4,7 @@ import { fetchScenarios, fetchMessages, askStream } from "./api.js";
 import * as sessions from "./sessions.js";
 import { pickIcon } from "./scenarios.js";
 import { addBubble, addThinking, showError, renderMd, waitingText, attachBotActions } from "./render.js";
-import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar, toggleScnMenu, renderStats, clearStats, setSending, initScrollBottom } from "./ui.js";
+import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar, renderStats, clearStats, setSending, initScrollBottom } from "./ui.js";
 
 /* ═══════════════════════
    状态
@@ -44,12 +44,6 @@ async function init() {
     toast("场景加载失败：" + e.message);
   }
   restoreFromHash();
-
-  const scnSwitch = document.getElementById("scnSwitch");
-  if (scnSwitch) scnSwitch.addEventListener("click", (e) => {
-    e.stopPropagation();
-    openScenarioMenu();
-  });
 }
 
 /* ═══════════════════════
@@ -305,24 +299,8 @@ function onAnswered(convId, question) {
 }
 
 /* ═══════════════════════
-   场景切换器
+   场景切换
 ═══════════════════════ */
-function openScenarioMenu() {
-  const menu = document.getElementById("scnMenu");
-  menu.innerHTML = SCENARIOS.map(s => `
-    <div class="scn-menu-item ${s.name === (current && current.scenario) ? 'current' : ''}"
-         data-name="${escHtml(s.name)}" role="option">
-      ${escHtml(s.name)}
-    </div>`).join("");
-  menu.querySelectorAll(".scn-menu-item").forEach(el => {
-    el.addEventListener("click", () => {
-      toggleScnMenu(false);
-      switchScenario(el.dataset.name);
-    });
-  });
-  toggleScnMenu(true);
-}
-
 function switchScenario(name) {
   // 同场景且未开始会话，静默忽略
   if (name === (current && current.scenario) && !current.id) return;
@@ -334,7 +312,6 @@ function switchScenario(name) {
   clearStats();
   current = { id: null, scenario: name };
   setRoute("s/" + encodeURIComponent(name));
-  showBadge(name);
   pickScenario(name);
 }
 
