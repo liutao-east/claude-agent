@@ -475,3 +475,25 @@
   border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 12px;
 }
 .send-btn.is-stop:hover:not(:disabled) { background: #dc2626; transform: none; }
+
+/* === Task 14: 换皮二 — 气泡/头像/卡片/回弹动画 === */
+
+/* Step 1: 气泡与头像 */
+.av { border-radius:999px; font-size:16px; }
+.msg.bot .av  { background: linear-gradient(135deg, var(--mint), #4cd1b3); color:#fff; }
+.msg.user .av { background: linear-gradient(135deg, var(--pink), #ff7799); color:#fff; border:none; }
+.bubble { border-radius: var(--r-xl); line-height:1.7; }
+.msg.bot .bubble  { background: rgba(255,255,255,.85); border:1px solid var(--border); border-bottom-left-radius:6px; box-shadow:var(--sh-sm); }
+.msg.user .bubble { background: linear-gradient(135deg, var(--pink), #ff82a0); color:#fff; border-bottom-right-radius:6px; box-shadow:0 4px 14px rgba(255,155,179,.2); }
+.scn-card { border-radius: var(--r); box-shadow: var(--sh-sm); }
+.scn-card:hover { transform: translateY(-4px); box-shadow: var(--sh-md); border-color: var(--blue); }
+.scn-icon { background: var(--blue-light); font-size:20px; }
+
+/* Step 2: 回弹动画 */
+.msg { animation: popIn .3s var(--ease) both; }
+@keyframes popIn { from{opacity:0; transform:translateY(10px) scale(.96);} to{opacity:1; transform:none;} }
+.welcome-ico { animation: float 3s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+.dots i { animation: cuteBlink 1.2s infinite ease-in-out; box-shadow:0 0 6px rgba(134,193,255,.4); }
+@keyframes cuteBlink { 0%,100%{opacity:.3; transform:scale(.7);} 50%{opacity:1; transform:scale(1.15);} }
+.new-btn:hover, .scn-card:hover { transition: all var(--t) var(--ease); }
