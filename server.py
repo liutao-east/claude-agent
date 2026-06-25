@@ -389,6 +389,7 @@ async def index() -> FileResponse:
 
 
 app.mount("/styles", StaticFiles(directory=str(STATIC_DIR / "styles")), name="static-styles")
+app.mount("/js", StaticFiles(directory=str(STATIC_DIR / "js")), name="static-js")
 
 
 class AskRequest(BaseModel):
