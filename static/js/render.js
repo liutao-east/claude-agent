@@ -1,6 +1,7 @@
 // DOM 渲染辅助:气泡、思考态、错误、Markdown 渲染。
 import { escHtml } from "./util.js";
 import { USER_AV, BOT_AV } from "./scenarios.js";
+import { scrollBottom } from "./ui.js";
 
 // marked / hljs 通过 CDN <script> 注入到全局,这里按原行为用 window.* 访问。
 
@@ -16,9 +17,7 @@ export function addBubble(role, text, withMd) {
   if (role === "user")    contentEl.textContent = text;
   else if (withMd)        renderMd(contentEl, text, true);
   feed.appendChild(msg);
-  // scrollBottom 由 ui.js 提供,但 render 与 ui 互不依赖,
-  // 这里直接就地滚动以保持与原内联实现一致的行为。
-  const f = document.getElementById("feed"); f.scrollTop = f.scrollHeight;
+  scrollBottom();
   return { bubble: msg.querySelector(".bubble"), contentEl };
 }
 
@@ -35,7 +34,7 @@ export function addThinking() {
       <span class="thinking-secs">0s</span>
     </div>`;
   feed.appendChild(msg);
-  const f = document.getElementById("feed"); f.scrollTop = f.scrollHeight;
+  scrollBottom();
   return msg;
 }
 
@@ -44,7 +43,7 @@ export function showError(msg) {
   bubble.parentElement.classList.add("err");
   bubble.querySelector(".content").innerHTML =
     `出了点状况，请稍后再试。<div class="msg-meta">${escHtml(msg)}</div>`;
-  const f = document.getElementById("feed"); f.scrollTop = f.scrollHeight;
+  scrollBottom();
 }
 
 function addCopyButtons(el) {
