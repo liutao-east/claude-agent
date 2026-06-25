@@ -11,4 +11,4 @@ export function pickIcon(name) {
 }
 
 export const BOT_AVATAR = "🤖";
-export function userAvatar() { return "你"; }
+export const USER_AVATAR = "你";

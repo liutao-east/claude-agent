@@ -1,6 +1,6 @@
 // DOM 渲染辅助:气泡、思考态、错误、Markdown 渲染。
 import { escHtml } from "./util.js";
-import { BOT_AVATAR, userAvatar } from "./scenarios.js";
+import { BOT_AVATAR, USER_AVATAR } from "./scenarios.js";
 import { toast, scrollBottom } from "./ui.js";
 
 // marked / hljs 通过 CDN <script> 注入到全局,这里按原行为用 window.* 访问。
@@ -12,7 +12,7 @@ export function addBubble(role, text, withMd) {
   const feed = document.getElementById("feed");
   const msg  = document.createElement("div");
   msg.className = "msg " + (role === "user" ? "user" : "bot");
-  msg.innerHTML = `<div class="av" aria-hidden="true">${role === "user" ? userAvatar() : BOT_AVATAR}</div><div class="bubble"><div class="content"></div></div>`;
+  msg.innerHTML = `<div class="av" aria-hidden="true">${role === "user" ? USER_AVATAR : BOT_AVATAR}</div><div class="bubble"><div class="content"></div></div>`;
   const contentEl = msg.querySelector(".content");
   if (role === "user")    contentEl.textContent = text;
   else if (withMd)        renderMd(contentEl, text, true);
