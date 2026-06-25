@@ -1,31 +1,46 @@
 
   :root {
-    --primary:      #4F81F8;
-    --primary-d:    #2563EB;
-    --primary-l:    #EEF3FF;
-    --primary-ring: rgba(79, 129, 248, .22);
-    --ai:           #059669;
-    --ai-l:         #ECFDF5;
-    --danger:       #EF4444;
-    --danger-l:     #FEF2F2;
-    --bg:           #F5F7FB;
-    --surface:      #FFFFFF;
-    --surface-2:    #F8FAFC;
-    --border:       #E4E9F0;
-    --border-2:     #CFD8E8;
-    --text:         #1A202C;
-    --text-2:       #64748B;
-    --text-3:       #A0AEC0;
-    --sh-sm:        0 1px 2px rgba(0,0,0,.06);
-    --sh:           0 1px 4px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
-    --sh-md:        0 4px 14px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
-    --r:            14px;
-    --r-sm:         10px;
-    --r-xs:         7px;
-    --sidebar-w:    260px;
-    --topbar-h:     54px;
-    --ease:         cubic-bezier(.4, 0, .2, 1);
-    --t:            150ms;
+    /* ── 马卡龙色板 ── */
+    --pink:        #FF9BB3;
+    --pink-light:  #FFE6EC;
+    --blue:        #86C1FF;
+    --blue-light:  #E6F2FF;
+    --mint:        #86E3CE;
+    --mint-light:  #E6FBF6;
+    --yellow:      #FFE599;
+    --lavender:    #D4C2FC;
+    /* ── 文字 / 表面 ── */
+    --text:        #333344;
+    --text-2:      #777788;
+    --text-3:      #aaaabb;
+    --surface:     #ffffff;
+    --surface-2:   #F7F8FC;
+    --border:      #E8EBF5;
+    --border-2:    #dfe4f2;
+    --bg:          #f5f7ff;
+    /* ── 圆角 ── */
+    --r:           16px;
+    --r-xl:        22px;
+    --r-sm:        12px;
+    --r-xs:        10px;
+    /* ── 阴影 ── */
+    --sh-sm:       0 3px 10px rgba(134,193,255,.15);
+    --sh:          0 3px 10px rgba(134,193,255,.15);
+    --sh-md:       0 6px 18px rgba(134,193,255,.25);
+    /* ── 动画 ── */
+    --ease:        cubic-bezier(.34,1.56,.64,1);
+    --t:           220ms;
+    /* ── 旧变量别名（保持向后兼容） ── */
+    --primary:     var(--blue);
+    --primary-d:   #5aa6ff;
+    --primary-l:   var(--blue-light);
+    --primary-ring: rgba(134,193,255,.22);
+    --ai:          #029272;
+    --ai-l:        var(--mint-light);
+    --danger:      #ff4d6d;
+    --danger-l:    var(--pink-light);
+    --sidebar-w:   270px;
+    --topbar-h:    56px;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,7 +51,7 @@
     font-size: 14px;
     line-height: 1.6;
     color: var(--text);
-    background: var(--bg);
+    background: linear-gradient(145deg,#fef7fb,#f0f7ff);
     display: flex;
     height: 100vh;
     overflow: hidden;
@@ -50,8 +65,8 @@
   /* ── 滚动条 ── */
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 99px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+  ::-webkit-scrollbar-thumb { background: var(--lavender); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--pink); }
 
   /* ═══════════════════════════════
      侧边栏
@@ -60,7 +75,8 @@
     width: var(--sidebar-w);
     flex-shrink: 0;
     height: 100%;
-    background: var(--surface);
+    background: rgba(255,255,255,.75);
+    backdrop-filter: blur(10px);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
@@ -94,14 +110,14 @@
     border: none; cursor: pointer;
     padding: 10px 12px;
     border-radius: var(--r-sm);
-    background: var(--primary);
+    background: linear-gradient(135deg, var(--pink), #ff88aa);
     color: #fff;
     font-size: 13px; font-weight: 600; font-family: inherit;
-    box-shadow: 0 2px 8px rgba(79,129,248,.35);
+    box-shadow: 0 4px 14px rgba(255,155,179,.2);
     transition: background var(--t) var(--ease), transform var(--t) var(--ease), box-shadow var(--t) var(--ease);
     flex-shrink: 0;
   }
-  .new-btn:hover  { background: var(--primary-d); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,129,248,.4); }
+  .new-btn:hover  { background: linear-gradient(135deg,#ff8aa6,#ff7799); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,155,179,.4); }
   .new-btn:active { transform: translateY(0); box-shadow: var(--sh); }
   .new-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
@@ -166,8 +182,8 @@
     display: flex; align-items: center; gap: 8px;
     padding: 0 20px;
     border-bottom: 1px solid var(--border);
-    background: rgba(255,255,255,.88);
-    backdrop-filter: blur(14px);
+    background: rgba(255,255,255,.70);
+    backdrop-filter: blur(12px);
   }
   .topbar-ico { color: var(--text-3); flex-shrink: 0; display: flex; }
   .topbar-hint { font-size: 13px; color: var(--text-3); }
@@ -320,17 +336,17 @@
     flex-shrink: 0;
     padding: 12px 20px 16px;
     border-top: 1px solid var(--border);
-    background: rgba(255,255,255,.88);
-    backdrop-filter: blur(14px);
+    background: rgba(255,255,255,.65);
+    backdrop-filter: blur(12px);
   }
   .composer-inner { max-width: 820px; margin: 0 auto; }
   .composer-box {
     display: flex; gap: 10px; align-items: flex-end;
     background: var(--surface); border: 1.5px solid var(--border);
-    border-radius: var(--r); padding: 9px 12px;
+    border-radius: var(--r-xl); padding: 9px 12px;
     transition: border-color var(--t), box-shadow var(--t);
   }
-  .composer-box:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-ring); }
+  .composer-box:focus-within { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(134,193,255,.2); }
   textarea {
     flex: 1; resize: none; border: none; outline: none;
     font-size: 14px; font-family: inherit; color: var(--text);
@@ -340,8 +356,8 @@
   textarea:disabled { color: var(--text-3); cursor: not-allowed; }
   .send-btn {
     border: none; cursor: pointer;
-    width: 34px; height: 34px; border-radius: 8px;
-    background: var(--primary); color: #fff;
+    width: 34px; height: 34px; border-radius: 999px;
+    background: linear-gradient(135deg, var(--blue), var(--lavender)); color: #fff;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
     transition: background var(--t) var(--ease), transform var(--t) var(--ease);
