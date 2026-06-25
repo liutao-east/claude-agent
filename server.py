@@ -1,7 +1,9 @@
 """多场景问答 HTTP 服务,基于 Claude Agent SDK。
 
-启动时从 config.json 读取配置(结构与 Claude Code 的 settings.json 一致,
-其中 env 块原样透传给 Agent 子进程,可配置网关/密钥/代理),对外提供以下接口:
+启动时从 config.json 读取业务配置(host/port/scenarios 等),并从同目录的
+agent.env.json 读取部署配置({"env": {...}},与本机 ~/.claude/settings.json 同构,
+含 ANTHROPIC_BASE_URL / ANTHROPIC_API_KEY / ANTHROPIC_MODEL / HTTP(S)_PROXY 等,
+整体透传给 Agent 子进程),对外提供以下接口:
     POST /ask          同步返回问答结果 {answer, cost_usd, num_turns, conversation_id}
     POST /ask_stream   以 SSE 流式返回回答内容
     GET  /health       返回当前配置信息
@@ -46,20 +48,31 @@ from claude_agent_sdk import (
 )
 
 # ---------------------------------------------------------------------------
-# 配置加载(JSON 文件,结构与 Claude Code 的 settings.json 一致)
+# 配置加载
 #
-# 默认读取项目根目录下的 config.json,可用环境变量 CODEQA_CONFIG 指定其它路径。
-# 其中 env 块会原样透传给 Agent 子进程,因此把 HTTP_PROXY / HTTPS_PROXY、
-# API_TIMEOUT_MS 等写进 env,即可让 Agent 的出站请求走代理。示例见 config.json.example。
+# 业务配置(host/port/scenarios 等)默认读取项目根目录下的 config.json,
+# 可用环境变量 CODEQA_CONFIG 指定其它路径。
+#
+# 部署配置(网关/密钥/代理/model)从同目录的 agent.env.json 读取——结构为
+# {"env": {...}},与本机 ~/.claude/settings.json 的 env 块同构,可整块互相复制。
+# 该块整体透传给 Agent 子进程:ANTHROPIC_BASE_URL/API_KEY 决定网关与密钥,
+# ANTHROPIC_MODEL 指定默认模型,ANTHROPIC_DEFAULT_{SONNET,OPUS,HAIKU}_MODEL 解析别名,
+# HTTP(S)_PROXY 让出站走代理。可用环境变量 CODEQA_ENV 指定其它路径。
 # ---------------------------------------------------------------------------
+# server.py 所在目录:相对配置路径都按它解析,不受启动 cwd 影响。
+_BASE_DIR = Path(__file__).resolve().parent
+
 CONFIG_PATH = Path(os.environ.get("CODEQA_CONFIG", "config.json"))
 if not CONFIG_PATH.is_absolute():
-    # 相对路径按 server.py 所在目录解析,不受启动 cwd 影响。
-    CONFIG_PATH = Path(__file__).resolve().parent / CONFIG_PATH
+    CONFIG_PATH = _BASE_DIR / CONFIG_PATH
+
+ENV_PATH = Path(os.environ.get("CODEQA_ENV", "agent.env.json"))
+if not ENV_PATH.is_absolute():
+    ENV_PATH = _BASE_DIR / ENV_PATH
 
 
 def load_config() -> dict[str, Any]:
-    """读取 JSON 配置;文件缺失或解析失败时返回空配置并告警。"""
+    """读取业务配置(JSON);文件缺失或解析失败时返回空配置并告警。"""
     log = logging.getLogger("code-qa")
     try:
         with CONFIG_PATH.open("r", encoding="utf-8") as f:
@@ -70,6 +83,28 @@ def load_config() -> dict[str, Any]:
     except json.JSONDecodeError as e:
         log.error("配置文件解析失败 %s: %s", CONFIG_PATH, e)
         return {}
+
+
+def load_env_config() -> dict[str, str]:
+    """读取部署配置(agent.env.json);文件缺失或解析失败时返回空 dict 并告警。
+
+    文件结构为 {"env": {...}},取其 env 块整体作为 Agent 子进程的环境变量
+    (与本机 settings.json 同构,可整块复制)。空值键被过滤,便于留空回退本机默认。
+    """
+    log = logging.getLogger("code-qa")
+    try:
+        with ENV_PATH.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        log.warning("env 配置不存在: %s(网关/密钥/model 将回退本机 ~/.claude 配置;"
+                    "如需配置请复制 agent.env.json.example 为 agent.env.json)", ENV_PATH)
+        return {}
+    except json.JSONDecodeError as e:
+        log.error("env 配置解析失败 %s: %s", ENV_PATH, e)
+        return {}
+    raw = data.get("env") or {}
+    # 过滤 None 与空串;其余统一转 str,避免把空值透传进子进程。
+    return {str(k): str(v) for k, v in raw.items() if v not in (None, "")}
 
 
 CONFIG: dict[str, Any] = load_config()
@@ -90,17 +125,17 @@ logging.basicConfig(
 logger = logging.getLogger("code-qa")
 
 # ---------------------------------------------------------------------------
-# 启动配置(取自 config.json)
+# 启动配置(业务项取自 config.json;网关/密钥/model 取自 agent.env.json)
 # ---------------------------------------------------------------------------
 # env 块整体透传给 Agent 子进程:ANTHROPIC_* 决定网关与密钥,HTTP(S)_PROXY 让出站走代理。
-AGENT_ENV: dict[str, str] = {
-    str(k): str(v) for k, v in (CONFIG.get("env") or {}).items()
-}
+AGENT_ENV: dict[str, str] = load_env_config()
 ANTHROPIC_BASE_URL: str | None = AGENT_ENV.get("ANTHROPIC_BASE_URL")
 ANTHROPIC_API_KEY: str | None = AGENT_ENV.get("ANTHROPIC_API_KEY")
-# 全局默认:场景内省略 cwd / model 时回退到这两项。
+# 全局默认:场景内省略 cwd 时回退到此项。
 PROJECT_DIR: str | None = CONFIG.get("project_dir")
-MODEL: str | None = CONFIG.get("model")
+# 默认模型取自 env 的 ANTHROPIC_MODEL(仅用于展示/日志;子进程通过 env 直接读取它)。
+# 为空表示未显式指定,CLI 会用本机 ~/.claude 默认或别名解析。
+MODEL: str | None = AGENT_ENV.get("ANTHROPIC_MODEL")
 
 DEFAULT_MAX_TURNS = 10
 DEFAULT_ALLOWED_TOOLS = ["Read", "Glob", "Grep", "Bash"]
@@ -141,6 +176,8 @@ class Scenario:
     add_dirs: list[str] = field(default_factory=list)
     model: str | None = None
     max_turns: int = DEFAULT_MAX_TURNS
+    # 场景级 env:覆盖全局 agent.env.json 的同 key(如换网关/模型/代理),缺省则用全局。
+    env: dict[str, str] = field(default_factory=dict)
     mcp_servers: dict[str, Any] = field(default_factory=dict)
 
 
@@ -229,6 +266,9 @@ def load_scenarios(config: dict[str, Any]) -> dict[str, Scenario]:
             add_dirs=[str(_resolve_relative(d)) for d in (spec.get("add_dirs") or [])],
             model=spec.get("model") or MODEL,
             max_turns=int(spec.get("max_turns") or DEFAULT_MAX_TURNS),
+            # 场景级 env:与 vars 同样做 str 化与空值过滤;会覆盖全局 agent.env.json 的同 key。
+            env={str(k): str(v) for k, v in (spec.get("env") or {}).items()
+                 if v not in (None, "")},
             mcp_servers=spec.get("mcp_servers") or {},
         )
     return scenarios
@@ -247,18 +287,20 @@ def resolve_default_scenario(config: dict[str, Any], scenarios: dict[str, Scenar
 SCENARIOS: dict[str, Scenario] = load_scenarios(CONFIG)
 DEFAULT_SCENARIO: str = resolve_default_scenario(CONFIG, SCENARIOS)
 
-logger.info("配置加载: config=%s base_url=%s db_path=%s scenarios=%s default=%s",
-            CONFIG_PATH, ANTHROPIC_BASE_URL, store.DB_PATH,
+logger.info("配置加载: config=%s env=%s base_url=%s model=%s db_path=%s scenarios=%s default=%s",
+            CONFIG_PATH, ENV_PATH, ANTHROPIC_BASE_URL, MODEL, store.DB_PATH,
             list(SCENARIOS), DEFAULT_SCENARIO)
 if not ANTHROPIC_API_KEY:
-    logger.warning("ANTHROPIC_API_KEY 未设置,Agent 调用将会失败")
+    logger.warning("ANTHROPIC_API_KEY 未在 agent.env.json 配置;若本机 ~/.claude 也未配置,Agent 调用将失败")
 if not SCENARIOS:
     logger.warning("未加载到任何场景,Agent 调用将会失败")
 for _s in SCENARIOS.values():
     if not _s.cwd:
         logger.warning("场景 %s 未配置 cwd(project_dir),调用将会失败", _s.name)
     if not _s.model:
-        logger.warning("场景 %s 未配置 model,调用将会失败", _s.name)
+        # model 为空不视为错误:此时交给子进程用 env 的 ANTHROPIC_MODEL,或本机 ~/.claude 默认。
+        logger.info("场景 %s 未配置 model,将使用 env 的 ANTHROPIC_MODEL(%s)或本机 ~/.claude 默认模型",
+                    _s.name, MODEL or "未设置")
 
 
 def mask_key(key: str | None) -> str:
@@ -280,11 +322,10 @@ def build_options(
     """
     if not scenario.cwd:
         raise ValueError(f"场景 {scenario.name} 未配置 cwd(project_dir)")
-    if not scenario.model:
-        raise ValueError(f"场景 {scenario.name} 未配置 model")
+    # model 可为 None:此时 SDK 用本机 ~/.claude 默认模型(与 env 的回退行为一致)。
 
-    # env 块整体透传给子进程:ANTHROPIC_* 指定网关/密钥,HTTP(S)_PROXY 让出站走代理。
-    env: dict[str, str] = dict(AGENT_ENV)
+    # env 块整体透传给子进程:全局 agent.env.json 打底,场景级 env 覆盖同 key(如换网关/模型/代理)。
+    env: dict[str, str] = {**AGENT_ENV, **scenario.env}
 
     kwargs: dict[str, Any] = dict(
         cwd=scenario.cwd,

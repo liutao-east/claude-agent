@@ -5,9 +5,10 @@ __pycache__/
 .venv/
 venv/
 
-# 配置文件(含密钥,勿提交;示例见 config.json.example)
+# 配置文件(含密钥,勿提交;示例见 config.json.example / agent.env.json.example)
 config.json
 .env
+agent.env.json
 
 # IDE
 .idea/
