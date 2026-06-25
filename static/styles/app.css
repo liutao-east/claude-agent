@@ -426,4 +426,33 @@
 
 /* ── 停止按钮状态 ── */
 .send-btn.is-stop { background: var(--danger, #EF4444); }
+
+/* ── 消息级操作条 ── */
+.msg.bot .bubble { position: relative; }
+.msg-actions {
+  position: absolute; top: -14px; right: 8px;
+  display: flex; gap: 4px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #E4E9F0);
+  border-radius: 8px; padding: 2px;
+  box-shadow: var(--sh, 0 2px 8px rgba(0,0,0,.08));
+  opacity: 0;
+  transition: opacity .15s;
+  pointer-events: none;
+}
+.msg.bot .bubble:hover .msg-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.ma-btn {
+  border: none; background: transparent; cursor: pointer;
+  padding: 3px 7px; border-radius: 5px;
+  color: var(--text-2, #64748B); font-size: 13px;
+}
+.ma-btn:hover { background: var(--surface-2, #F8FAFC); color: var(--text, #1A202C); }
+.retry-btn {
+  margin-top: 8px; border: none;
+  background: var(--danger, #EF4444); color: #fff;
+  border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 12px;
+}
 .send-btn.is-stop:hover:not(:disabled) { background: #dc2626; transform: none; }

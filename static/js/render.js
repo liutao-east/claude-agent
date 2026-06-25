@@ -1,7 +1,7 @@
 // DOM 渲染辅助:气泡、思考态、错误、Markdown 渲染。
 import { escHtml } from "./util.js";
 import { USER_AV, BOT_AV } from "./scenarios.js";
-import { scrollBottom } from "./ui.js";
+import { toast, scrollBottom } from "./ui.js";
 
 // marked / hljs 通过 CDN <script> 注入到全局,这里按原行为用 window.* 访问。
 
@@ -38,11 +38,18 @@ export function addThinking() {
   return msg;
 }
 
-export function showError(msg) {
+export function showError(msg, onRetry) {
   const { bubble } = addBubble("bot", "", false);
   bubble.parentElement.classList.add("err");
-  bubble.querySelector(".content").innerHTML =
-    `出了点状况，请稍后再试。<div class="msg-meta">${escHtml(msg)}</div>`;
+  const c = bubble.querySelector(".content");
+  c.innerHTML = `出了点状况，请稍后再试。<div class="msg-meta">${escHtml(msg)}</div>`;
+  if (onRetry) {
+    const b = document.createElement("button");
+    b.className = "retry-btn";
+    b.textContent = "↻ 重试";
+    b.addEventListener("click", () => { bubble.parentElement.remove(); onRetry(); });
+    c.appendChild(b);
+  }
   scrollBottom();
 }
 
@@ -85,4 +92,17 @@ export function waitingText(secs) {
   if (secs < 10) return "正在思考";
   if (secs < 30) return "正在查阅相关代码 / 日志";
   return "仍在分析，复杂排查可能需要 1–2 分钟";
+}
+
+export function attachBotActions(bubbleEl, getMarkdown, { onRegen }) {
+  const bar = document.createElement("div");
+  bar.className = "msg-actions";
+  bar.innerHTML = `
+    <button class="ma-btn" data-act="copy" title="复制整条" aria-label="复制整条回答">⧉</button>
+    <button class="ma-btn" data-act="regen" title="重新生成" aria-label="重新生成回答">↻</button>`;
+  bar.querySelector('[data-act="copy"]').addEventListener("click", () => {
+    navigator.clipboard.writeText(getMarkdown()).then(() => toast("已复制整条回答", "success"));
+  });
+  bar.querySelector('[data-act="regen"]').addEventListener("click", onRegen);
+  bubbleEl.appendChild(bar);
 }

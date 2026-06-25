@@ -3,7 +3,7 @@ import { escHtml, relTime } from "./util.js";
 import { fetchScenarios, fetchMessages, askStream } from "./api.js";
 import * as sessions from "./sessions.js";
 import { scnIcon } from "./scenarios.js";
-import { addBubble, addThinking, showError, renderMd, waitingText } from "./render.js";
+import { addBubble, addThinking, showError, renderMd, waitingText, attachBotActions } from "./render.js";
 import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar, toggleScnMenu, renderStats, clearStats, setSending } from "./ui.js";
 
 /* ═══════════════════════
@@ -204,13 +204,8 @@ async function openSession(id) {
 /* ═══════════════════════
    发送 & SSE 流
 ═══════════════════════ */
-async function send() {
-  const input = document.getElementById("input");
-  const q = input.value.trim();
-  if (!q || busy || !current.scenario) return;
-
-  addBubble("user", q, false);
-  input.value = ""; autoGrow(input);
+async function ask(question) {
+  addBubble("user", question, false);
   busy = true; setEnabled(false);
 
   const thinkEl = addThinking();
@@ -237,7 +232,7 @@ async function send() {
 
   try {
     await askStream(
-      { question: q, scenario: current.scenario, conversation_id: current.id },
+      { question: question, scenario: current.scenario, conversation_id: current.id },
       {
         signal: aborter.signal,
         onEvent: (event, data) => {
@@ -257,14 +252,15 @@ async function send() {
             meta.className = "msg-meta";
             meta.innerHTML = `<span>${data.num_turns ?? 0} 轮对话</span><span class="meta-dot"></span><span>$${(data.cost_usd ?? 0).toFixed(4)}</span>`;
             bubble.appendChild(meta);
+            attachBotActions(bubble, () => answer, { onRegen: () => ask(question) });
             stats.turns += data.num_turns ?? 0;
             stats.cost  += data.cost_usd ?? 0;
             renderStats(stats);
-            onAnswered(data.conversation_id, q);
+            onAnswered(data.conversation_id, question);
           } else if (event === "error") {
             clearInterval(timer);
             if (!started) thinkEl.remove();
-            showError(data.error || "未知错误");
+            showError(data.error || "未知错误", () => ask(question));
           }
         },
       }
@@ -275,7 +271,7 @@ async function send() {
     if (e.name === "AbortError") {
       // 用户主动停止，保留已出文字，不报错
     } else {
-      showError(e.httpStatus ? ("HTTP " + e.httpStatus + " · " + e.message) : ("网络错误：" + e.message));
+      showError(e.httpStatus ? ("HTTP " + e.httpStatus + " · " + e.message) : ("网络错误：" + e.message), () => ask(question));
     }
   } finally {
     clearInterval(timer);
@@ -285,6 +281,14 @@ async function send() {
     document.getElementById("input").focus();
     scrollBottom();
   }
+}
+
+async function send() {
+  const input = document.getElementById("input");
+  const q = input.value.trim();
+  if (!q || busy || !current.scenario) return;
+  input.value = ""; autoGrow(input);
+  await ask(q);
 }
 
 function onAnswered(convId, question) {
