@@ -4,7 +4,7 @@ import { fetchScenarios, fetchMessages, askStream } from "./api.js";
 import * as sessions from "./sessions.js";
 import { scnIcon } from "./scenarios.js";
 import { addBubble, addThinking, showError, renderMd } from "./render.js";
-import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar } from "./ui.js";
+import { toast, scrollBottom, autoGrow, onKey, setEnabled, showBadge, setSendHandler, initSidebarToggle, closeMobileSidebar, toggleScnMenu } from "./ui.js";
 
 /* ═══════════════════════
    状态
@@ -41,6 +41,12 @@ async function init() {
     toast("场景加载失败：" + e.message);
   }
   restoreFromHash();
+
+  const scnSwitch = document.getElementById("scnSwitch");
+  if (scnSwitch) scnSwitch.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openScenarioMenu();
+  });
 }
 
 /* ═══════════════════════
@@ -268,6 +274,38 @@ function onAnswered(convId, question) {
   } else {
     sessions.touchSession(current.id);
   }
+}
+
+/* ═══════════════════════
+   场景切换器
+═══════════════════════ */
+function openScenarioMenu() {
+  const menu = document.getElementById("scnMenu");
+  menu.innerHTML = SCENARIOS.map(s => `
+    <div class="scn-menu-item ${s.name === (current && current.scenario) ? 'current' : ''}"
+         data-name="${escHtml(s.name)}" role="option">
+      ${escHtml(s.name)}
+    </div>`).join("");
+  menu.querySelectorAll(".scn-menu-item").forEach(el => {
+    el.addEventListener("click", () => {
+      toggleScnMenu(false);
+      switchScenario(el.dataset.name);
+    });
+  });
+  toggleScnMenu(true);
+}
+
+function switchScenario(name) {
+  // 同场景且未开始会话，静默忽略
+  if (name === (current && current.scenario) && !current.id) return;
+  const hasMsgs = !!current.id;
+  if (hasMsgs && name !== (current && current.scenario)) {
+    if (!confirm(`切换到「${name}」将开启一条新对话，当前对话会保留在历史中。继续？`)) return;
+  }
+  current = { id: null, scenario: name };
+  setRoute("s/" + encodeURIComponent(name));
+  showBadge(name);
+  pickScenario(name);
 }
 
 /* ═══════════════════════
